@@ -30,7 +30,7 @@ interface WebSidebarProps {
 export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
   const { appSettings, user } = useAuth();
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(true); // Default to collapsed
+  const [collapsed, setCollapsed] = useState(false); // Default to collapsed
   
   // Only show on web platform
   if (Platform.OS !== 'web') {

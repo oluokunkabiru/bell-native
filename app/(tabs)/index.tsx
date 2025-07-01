@@ -374,23 +374,24 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <SideMenu 
+      {/* <SideMenu 
         visible={menuVisible} 
         onClose={() => setMenuVisible(false)} 
         user={user}
         kycStatus={kycStatus}
-      />
+      /> */}
       
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {Platform.OS === 'web' ? (
-            <TouchableOpacity 
-              style={styles.menuButton}
-              onPress={() => setMenuVisible(true)}
-            >
-              <Menu size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            <></>
+            // <TouchableOpacity 
+            //   style={styles.menuButton}
+            //   onPress={() => setMenuVisible(true)}
+            // >
+            //   <Menu size={24} color="#FFFFFF" />
+            // </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={() => setMenuVisible(true)}>
               {user.profile_image_url ? (
