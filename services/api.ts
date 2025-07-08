@@ -1165,6 +1165,14 @@ class ApiService {
       await storageService.clearAppData();
     }
   }
+
+  // Currencies API
+  async getCurrencies(page: number = 1, itemsPerPage: number = 15): Promise<any> {
+    if (!this.token) {
+      throw new Error('No authentication token available');
+    }
+    return this.makeRequest<any>(`/customers/currencies?page=${page}&items_per_page=${itemsPerPage}`);
+  }
 }
 
 export const apiService = new ApiService();

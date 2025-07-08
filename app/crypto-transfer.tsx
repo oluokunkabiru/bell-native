@@ -54,6 +54,7 @@ interface InitiateResponse {
 interface CryptoWallet {
   id: string;
   wallet_number: string;
+  ownership_label	:string;
   balance: string;
   currency?: { name: string; symbol: string; code: string };
   wallet_type?: { name: string };
@@ -96,6 +97,7 @@ export default function CryptoTransfer() {
   const [creatingWallet, setCreatingWallet] = useState(false);
   const [createWalletType, setCreateWalletType] = useState('crypto-account');
   const [currencies, setCurrencies] = useState<any[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('');
   const [walletProducts, setWalletProducts] = useState<any[]>([]);
   const [selectedWalletProduct, setSelectedWalletProduct] = useState('');
@@ -111,6 +113,23 @@ export default function CryptoTransfer() {
       fetchWallets(walletCategory);
     }
   }, [currentStep, walletCategory]);
+
+  // Fetch currencies when create wallet modal is opened
+  useEffect(() => {
+    if (showCreateWallet) {
+      setCurrenciesLoading(true);
+      apiService.getCurrencies(1, 15)
+        .then((response) => {
+          if (response.status && response.data?.data) {
+            setCurrencies(response.data.data);
+          } else {
+            setCurrencies([]);
+          }
+        })
+        .catch(() => setCurrencies([]))
+        .finally(() => setCurrenciesLoading(false));
+    }
+  }, [showCreateWallet]);
 
   const fetchWallets = async (category: 'crypto' | 'fiat' | 'all') => {
     setIsLoading(true);
@@ -330,8 +349,9 @@ export default function CryptoTransfer() {
           options={cryptoWallets.map(w => ({
             id: w.id,
             name: `${w.wallet_type?.name || 'Wallet'} (${w.currency?.code || ''}) - ${w.wallet_number}`,
-            code: w.id,
+            code: w.ownership_label,
           }))}
+
           selectedValue={selectedWalletId}
           onSelect={handleWalletSelect}
           placeholder="Choose a wallet"
@@ -379,14 +399,18 @@ export default function CryptoTransfer() {
             searchable={false}
             label="Wallet Type"
           />
-          <DropdownSelect
-            options={currencies.map(c => ({ id: c.id, name: `${c.name} (${c.code})`, code: c.id }))}
-            selectedValue={selectedCurrency}
-            onSelect={setSelectedCurrency}
-            placeholder="Select currency"
-            searchable={true}
-            label="Currency"
-          />
+          {currenciesLoading ? (
+            <LoadingSpinner message="Loading currencies..." color="#FFFFFF" />
+          ) : (
+            <DropdownSelect
+              options={currencies.map(c => ({ id: c.id, name: `${c.name} (${c.code})`, code: c.id }))}
+              selectedValue={selectedCurrency}
+              onSelect={setSelectedCurrency}
+              placeholder="Select currency"
+              searchable={true}
+              label="Currency"
+            />
+          )}
           {/* Optionally add wallet product/type dropdown here if you have products */}
           {createWalletType === 'virtual-account' && (
             <DropdownSelect
