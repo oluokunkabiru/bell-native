@@ -72,11 +72,7 @@ export default function CryptoTransfer() {
   const [currentStep, setCurrentStep] = useState<CryptoTransferStep['step']>('wallet');
   const [cryptoWallets, setCryptoWallets] = useState<CryptoWallet[]>([]);
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
-  const [networks] = useState<Network[]>([
-    { code: 'POL', name: 'Polygon' },
-    { code: 'ETH', name: 'Ethereum' },
-    { code: 'BSC', name: 'Binance Smart Chain' },
-  ]);
+  const [networks, setNetworks] = useState<Network[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -130,6 +126,38 @@ export default function CryptoTransfer() {
         .finally(() => setCurrenciesLoading(false));
     }
   }, [showCreateWallet]);
+
+  // Update networks based on selected currency
+  useEffect(() => {
+    if (!selectedCurrency) {
+      setNetworks([]);
+      return;
+    }
+    // Find the selected currency object
+    const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
+    if (!currencyObj) {
+      setNetworks([]);
+      return;
+    }
+    // Example logic for mapping currency to networks
+    
+    if (currencyObj.code === 'USDT') {
+      setNetworks([
+        { code: 'TRC20', name: 'TRON (TRC20)' },
+        { code: 'ERC20', name: 'Ethereum (ERC20)' },
+      ]);
+    } else if (currencyObj.code === 'USDC') {
+      setNetworks([
+        { code: 'POL', name: 'Polygon (POL)' },
+      ]);
+    } else {
+      setNetworks([
+        { code: 'POL', name: 'Polygon' },
+        { code: 'ETH', name: 'Ethereum' },
+        { code: 'BSC', name: 'Binance Smart Chain' },
+      ]);
+    }
+  }, [selectedCurrency, currencies]);
 
   const fetchWallets = async (category: 'crypto' | 'fiat' | 'all') => {
     setIsLoading(true);
