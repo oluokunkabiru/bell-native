@@ -171,6 +171,8 @@ export default function DashboardScreen() {
     } else {
       setKycStatus('incomplete');
     }
+
+
   };
 
   const handleRefresh = async () => {
@@ -237,6 +239,10 @@ export default function DashboardScreen() {
   };
 
   const kycStatusInfo = getKycStatusInfo();
+
+  // console.log(kycStatusInfo);
+
+  
 
   const copyToClipboard = (text: string, label: string) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -401,7 +407,7 @@ export default function DashboardScreen() {
                 />
               ) : (
                 <View style={[styles.avatarInitials, { backgroundColor: primaryColor }]}>
-                  <Text style={styles.initialsText}>{getInitials(user.full_name)}</Text>
+                 <Text style={styles.initialsText}>{getInitials(user.full_name)}</Text>
                 </View>
               )}
             </TouchableOpacity>

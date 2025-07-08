@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -30,7 +30,9 @@ interface WebSidebarProps {
 export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
   const { appSettings, user } = useAuth();
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false); // Default to collapsed
+  // Sidebar toggle suppose to go here
+  const [collapsed, setCollapsed] = useState(true); // Default to collapsed suppose to set to false
+
   
   // Only show on web platform
   if (Platform.OS !== 'web') {
@@ -44,6 +46,45 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       onToggleCollapse(newCollapsedState);
     }
   };
+
+
+  //  Automatically expand after page is ready
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => {
+  //     console.log(collapsed);
+      
+  //     setCollapsed(true);
+  //           console.log(collapsed);
+
+  //     setCollapsed(false);
+  //           console.log(collapsed);
+
+  //   }, 300); // Delay in ms (adjust as needed)
+
+  //   return () => clearTimeout(timeout); // Cleanup on unmount
+  // }, []);
+
+
+  // useEffect(() => {
+  //   // First toggle (collapse)
+  //   const firstTimeout = setTimeout(() => {
+  //     console.log('First toggle: collapsed → true');
+  //     setCollapsed(!collapsed);
+
+  //     // Second toggle (expand) after delay
+  //     const secondTimeout = setTimeout(() => {
+  //       console.log('Second toggle: collapsed → false');
+  //       setCollapsed(!collapsed);
+  //     }, 500); // 300ms after first toggle
+
+  //     return () => clearTimeout(secondTimeout);
+  //   }, 500); // Initial delay after load
+
+  //   return () => clearTimeout(firstTimeout);
+  // }, []);
+
+
+
 
   // Get menu display settings
   const displayMenuItems = appSettings?.['customized-app-displayable-menu-items'] || {};
@@ -211,9 +252,11 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
               </View>
             )}
             <Text style={styles.profileName}>{user?.first_name || 'User'}</Text>
-            <Text style={styles.profileEmail}>{user?.email || ''}</Text>
+            
+           <Text style={styles.profileEmail}>{user?.email || ''}</Text>
           </View>
         )}
+        
         
         <View style={styles.menuItems}>
           {filteredMenuItems.map((item, index) => (
