@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ interface Network {
 }
 
 interface CryptoTransferStep {
-  step: 'network' | 'address' | 'amount' | 'confirm' | 'pin' | 'result';
+  step: 'wallet' | 'network' | 'address' | 'amount' | 'confirm' | 'pin' | 'result';
 }
 
 interface CryptoTransferData {
@@ -50,9 +50,20 @@ interface InitiateResponse {
   total_amount_processable: string;
 }
 
+interface CryptoWallet {
+  id: string;
+  wallet_number: string;
+  balance: string;
+  currency?: { name: string; symbol: string; code: string };
+  wallet_type?: { name: string };
+  status?: { label: string; color: string };
+}
+
 export default function CryptoTransfer() {
-  const { user, appSettings, walletBalance, updateWalletBalance } = useAuth();
-  const [currentStep, setCurrentStep] = useState<CryptoTransferStep['step']>('network');
+  const { user, appSettings, updateWalletBalance } = useAuth();
+  const [currentStep, setCurrentStep] = useState<CryptoTransferStep['step']>('wallet');
+  const [cryptoWallets, setCryptoWallets] = useState<CryptoWallet[]>([]);
+  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [networks] = useState<Network[]>([
     { code: 'POL', name: 'Polygon' },
     { code: 'ETH', name: 'Ethereum' },
@@ -73,9 +84,49 @@ export default function CryptoTransfer() {
   const [initiateData, setInitiateData] = useState<InitiateResponse | null>(null);
   const [resultData, setResultData] = useState<any>(null);
   const [showPin, setShowPin] = useState(false);
+  const [walletCategory, setWalletCategory] = useState<'crypto' | 'fiat' | 'all'>('crypto');
 
   // Get colors from API settings
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#0066CC';
+
+  // Fetch crypto wallets on mount or when step is 'wallet'
+  useEffect(() => {
+    if (currentStep === 'wallet') {
+      fetchWallets(walletCategory);
+    }
+  }, [currentStep, walletCategory]);
+
+  const fetchWallets = async (category: 'crypto' | 'fiat' | 'all') => {
+    setIsLoading(true);
+    try {
+      let url = '/customers/wallets?items_per_page=15';
+      if (category !== 'all') {
+        url += `&category=${category}`;
+      }
+      const response = await apiService.makeRequest<any>(url);
+      if (response.status && response.data?.data) {
+        setCryptoWallets(response.data.data);
+        if (response.data.data.length > 0) {
+          setSelectedWalletId(response.data.data[0].id);
+        } else {
+          setSelectedWalletId('');
+        }
+      } else {
+        Alert.alert('Error', 'No wallets found.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load wallets.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectedWallet = cryptoWallets.find(w => w.id === selectedWalletId);
+  const walletBalance = selectedWallet ? parseFloat(selectedWallet.balance) : 0;
+
+  const handleWalletSelect = (walletId: string) => {
+    setSelectedWalletId(walletId);
+  };
 
   const handleNetworkSelect = (networkCode: string) => {
     const network = networks.find(n => n.code === networkCode);
@@ -203,6 +254,62 @@ export default function CryptoTransfer() {
         break;
     }
   };
+
+  const renderWalletSelection = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Select Wallet</Text>
+      {/* Wallet Category Dropdown */}
+      <DropdownSelect
+        options={[
+          { id: 'crypto', name: 'Crypto Wallets', code: 'crypto' },
+          { id: 'fiat', name: 'Fiat Wallets', code: 'fiat' },
+          { id: 'all', name: 'All Wallets', code: 'all' },
+        ]}
+        selectedValue={walletCategory}
+        onSelect={(val) => setWalletCategory(val as 'crypto' | 'fiat' | 'all')}
+        placeholder="Select wallet type"
+        searchable={false}
+        label="Wallet Type"
+      />
+      {isLoading ? (
+        <LoadingSpinner message="Loading wallets..." color="#FFFFFF" />
+      ) : cryptoWallets.length > 0 ? (
+        <DropdownSelect
+          options={cryptoWallets.map(w => ({
+            id: w.id,
+            name: `${w.wallet_type?.name || 'Wallet'} (${w.currency?.code || ''}) - ${w.wallet_number}`,
+            code: w.id,
+          }))}
+          selectedValue={selectedWalletId}
+          onSelect={handleWalletSelect}
+          placeholder="Choose a wallet"
+          searchable={false}
+          label="Wallet"
+        />
+      ) : (
+        <Text style={styles.errorText}>No wallets available.</Text>
+      )}
+      {selectedWallet && (
+        <View style={styles.accountInfo}>
+          <Text style={styles.accountName}>{selectedWallet.wallet_type?.name || 'Wallet'}</Text>
+          <Text style={styles.accountDetails}>{selectedWallet.wallet_number}</Text>
+          <Text style={styles.balanceLabel}>Balance:</Text>
+          <Text style={styles.balanceAmount}>{selectedWallet.currency?.symbol || ''}{parseFloat(selectedWallet.balance).toLocaleString()}</Text>
+        </View>
+      )}
+      <TouchableOpacity
+        style={[
+          styles.continueButton,
+          { backgroundColor: primaryColor },
+          (!selectedWalletId) && styles.disabledButton
+        ]}
+        onPress={() => setCurrentStep('network')}
+        disabled={!selectedWalletId}
+      >
+        <Text style={styles.continueButtonText}>Continue</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderNetworkSelection = () => (
     <View style={styles.stepContainer}>
@@ -481,7 +588,7 @@ export default function CryptoTransfer() {
         <View style={styles.headerRight}>
           <View style={styles.balanceInfo}>
             <Text style={styles.balanceLabel}>Balance:</Text>
-            <Text style={styles.balanceAmount}>⟠{walletBalance.toLocaleString()}</Text>
+            <Text style={styles.balanceAmount}>{selectedWallet ? `${selectedWallet.currency?.symbol || ''}${parseFloat(selectedWallet.balance).toLocaleString()}` : '--'}</Text>
           </View>
         </View>
       </View>
@@ -489,6 +596,7 @@ export default function CryptoTransfer() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
+        {currentStep === 'wallet' && renderWalletSelection()}
         {currentStep === 'network' && renderNetworkSelection()}
         {currentStep === 'address' && renderAddressInput()}
         {currentStep === 'amount' && renderAmountInput()}
