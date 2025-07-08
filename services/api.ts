@@ -143,6 +143,40 @@ interface WalletToBankTransferResponse {
   data: any;
 }
 
+interface CryptoWalletTransferInitiateRequest {
+  source_wallet_id: string;
+  destination_address_code: string;
+  destination_address_network: string;
+  amount: number;
+  description: string;
+}
+
+interface CryptoWalletTransferInitiateResponse {
+  status: boolean;
+  message: string;
+  data: {
+    currency_code: string;
+    currency_symbol: string;
+    type: string;
+    category: string;
+    actual_balance_before: string;
+    amount_processable: string;
+    platform_charge_fee: string;
+    expected_balance_after: string;
+    total_amount_processable: string;
+  };
+}
+
+interface CryptoWalletTransferProcessRequest extends CryptoWalletTransferInitiateRequest {
+  transaction_pin: string;
+}
+
+interface CryptoWalletTransferProcessResponse {
+  status: boolean;
+  message: string;
+  data: any;
+}
+
 interface MeterServicesResponse {
   status: boolean;
   message: string;
@@ -876,6 +910,26 @@ class ApiService {
     }
 
     return this.makeRequest<WalletToBankTransferResponse>('/customers/wallet-to-bank-transaction/process', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async initiateCryptoWalletTransfer(request: CryptoWalletTransferInitiateRequest): Promise<CryptoWalletTransferInitiateResponse> {
+    if (!this.token) {
+      throw new Error('No authentication token available');
+    }
+    return this.makeRequest<CryptoWalletTransferInitiateResponse>('/customers/crypto-wallet-transaction/initiate', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async processCryptoWalletTransfer(request: CryptoWalletTransferProcessRequest): Promise<CryptoWalletTransferProcessResponse> {
+    if (!this.token) {
+      throw new Error('No authentication token available');
+    }
+    return this.makeRequest<CryptoWalletTransferProcessResponse>('/customers/crypto-wallet-transaction/process', {
       method: 'POST',
       body: JSON.stringify(request),
     });
