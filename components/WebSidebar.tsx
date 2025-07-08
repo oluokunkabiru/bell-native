@@ -123,6 +123,13 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       key: 'display-bank-transfer-menu',
     },
     {
+      title: 'Crypto Transfer',
+      icon: Send, // You can replace with a crypto icon if available
+      route: '/crypto-transfer',
+      active: pathname === '/crypto-transfer',
+      key: 'display-crypto-transfer-menu',
+    },
+    {
       title: 'Wallet Transfer',
       icon: Wallet,
       route: '/wallet-transfer',

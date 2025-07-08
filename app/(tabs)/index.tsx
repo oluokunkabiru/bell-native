@@ -271,6 +271,14 @@ export default function DashboardScreen() {
       key: 'display-bank-transfer-menu'
     },
     { 
+      title: 'Crypto Transfer',
+      icon: Send, // You can replace with a crypto icon if available
+      color: '#00b894',
+      route: '/crypto-transfer',
+      gradient: [secondaryColor, secondaryColor],
+      key: 'display-crypto-transfer-menu'
+    },
+    { 
       title: 'Wallet Transfer', 
       icon: Wallet, 
       color: '#f72585',

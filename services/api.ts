@@ -776,11 +776,11 @@ class ApiService {
     });
 
     const responseText = await response.text();
-    console.log('API response:', {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText,
-    });
+    // console.log('API response:', {
+    //   status: response.status,
+    //   statusText: response.statusText,
+    //   body: responseText,
+    // });
 
     if (!response.ok) {
       // Handle 401 Unauthorized - token expired or invalid
