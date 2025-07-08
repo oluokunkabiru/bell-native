@@ -58,13 +58,15 @@ interface CryptoWallet {
   balance: string;
   currency?: { name: string; symbol: string; code: string };
   wallet_type?: { name: string };
+  provider_metadata:{ code: string; currency: string; network:string, id:string };
+  
   status?: { label: string; color: string };
 }
 
 const WALLET_TYPE_OPTIONS = [
   { id: 'crypto-account', name: 'Crypto Wallet' },
-  { id: 'virtual-account', name: 'Virtual Account' },
-  { id: 'internal-account', name: 'Internal Account' },
+//   { id: 'virtual-account', name: 'Virtual Account' },
+//   { id: 'internal-account', name: 'Internal Account' },
 ];
 
 export default function CryptoTransfer() {
@@ -99,6 +101,7 @@ export default function CryptoTransfer() {
   const [selectedWalletProduct, setSelectedWalletProduct] = useState('');
   const [banks, setBanks] = useState<any[]>([]);
   const [selectedBank, setSelectedBank] = useState('');
+  const [createWalletNetwork, setCreateWalletNetwork] = useState('');
 
   // Get colors from API settings
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#0066CC';
@@ -114,7 +117,7 @@ export default function CryptoTransfer() {
   useEffect(() => {
     if (showCreateWallet) {
       setCurrenciesLoading(true);
-      apiService.getCurrencies(1, 15)
+      apiService.getCurrencies(1, 15, 'crypto')
         .then((response) => {
           if (response.status && response.data?.data) {
             setCurrencies(response.data.data);
@@ -127,37 +130,34 @@ export default function CryptoTransfer() {
     }
   }, [showCreateWallet]);
 
-  // Update networks based on selected currency
+  // Set selectedCurrency and update networks when wallet changes
   useEffect(() => {
-    if (!selectedCurrency) {
-      setNetworks([]);
-      return;
+    if (selectedWallet) {
+      const walletCurrencyCode = selectedWallet.currency?.code;
+      setSelectedCurrency(walletCurrencyCode || '');
+      // Update networks based on wallet currency
+      if (walletCurrencyCode === 'USDT') {
+        setNetworks([
+          { code: 'TRC20', name: 'TRON (TRC20)' },
+          { code: 'ERC20', name: 'Ethereum (ERC20)' },
+        ]);
+      } else if (walletCurrencyCode === 'USDC') {
+        setNetworks([
+          { code: 'POL', name: 'Polygon (POL)' },
+        ]);
+      } else if (walletCurrencyCode) {
+        setNetworks([
+          { code: 'POL', name: 'Polygon' },
+          { code: 'ETH', name: 'Ethereum' },
+          { code: 'BSC', name: 'Binance Smart Chain' },
+        ]);
+      } else {
+        setNetworks([]);
+      }
+      // Reset transferData network selection
+      setTransferData(prev => ({ ...prev, networkCode: '', networkName: '' }));
     }
-    // Find the selected currency object
-    const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
-    if (!currencyObj) {
-      setNetworks([]);
-      return;
-    }
-    // Example logic for mapping currency to networks
-    
-    if (currencyObj.code === 'USDT') {
-      setNetworks([
-        { code: 'TRC20', name: 'TRON (TRC20)' },
-        { code: 'ERC20', name: 'Ethereum (ERC20)' },
-      ]);
-    } else if (currencyObj.code === 'USDC') {
-      setNetworks([
-        { code: 'POL', name: 'Polygon (POL)' },
-      ]);
-    } else {
-      setNetworks([
-        { code: 'POL', name: 'Polygon' },
-        { code: 'ETH', name: 'Ethereum' },
-        { code: 'BSC', name: 'Binance Smart Chain' },
-      ]);
-    }
-  }, [selectedCurrency, currencies]);
+  }, [selectedWalletId, cryptoWallets]);
 
   const fetchWallets = async (category: 'crypto' | 'fiat' | 'all') => {
     setIsLoading(true);
@@ -204,10 +204,10 @@ export default function CryptoTransfer() {
   };
 
   const handleAddressVerification = () => {
-    if (!transferData.address || !/^0x[a-fA-F0-9]{40}$/.test(transferData.address)) {
-      setVerificationError('Please enter a valid wallet address');
-      return;
-    }
+    // if (!transferData.address || !/^0x[a-fA-F0-9]{40}$/.test(transferData.address)) {
+    //   setVerificationError('Please enter a valid wallet address');
+    //   return;
+    // }
     setVerificationError(null);
     setCurrentStep('amount');
   };
@@ -320,7 +320,7 @@ export default function CryptoTransfer() {
 
   // Handle wallet creation
   const handleCreateWallet = async () => {
-    if (!selectedCurrency || !createWalletType) return;
+    if (!selectedCurrency || !createWalletType || (createWalletNetwork === '' && currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')))) return;
     setCreatingWallet(true);
     try {
       const payload: any = {
@@ -332,6 +332,11 @@ export default function CryptoTransfer() {
       }
       if (selectedWalletProduct) {
         payload.wallet_type_id = selectedWalletProduct;
+      }
+      // Add network to payload if needed
+      const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
+      if (currencyObj && (currencyObj.code === 'USDT' || currencyObj.code === 'USDC' || currencyObj.code === 'POL' || currencyObj.code === 'ETH' || currencyObj.code === 'BSC')) {
+        payload.currency_network = createWalletNetwork;
       }
       const response = await apiService.makeRequest<any>('/customers/wallets', {
         method: 'POST',
@@ -376,7 +381,7 @@ export default function CryptoTransfer() {
         <DropdownSelect
           options={cryptoWallets.map(w => ({
             id: w.id,
-            name: `${w.wallet_type?.name || 'Wallet'} (${w.currency?.code || ''}) - ${w.wallet_number}`,
+            name: `${w.provider_metadata?.id || 'Wallet'} (${w.currency?.code || ''}) - ${w.wallet_number}`,
             code: w.ownership_label,
           }))}
 
@@ -439,7 +444,39 @@ export default function CryptoTransfer() {
               label="Currency"
             />
           )}
-          {/* Optionally add wallet product/type dropdown here if you have products */}
+          {(() => {
+            const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
+            let networkOptions: { id: string; name: string; code: string }[] = [];
+            if (currencyObj?.code === 'USDT') {
+              networkOptions = [
+                { id: 'TRC20', name: 'TRON (TRC20)', code: 'TRC20' },
+                { id: 'ERC20', name: 'Ethereum (ERC20)', code: 'ERC20' },
+              ];
+            } else if (currencyObj?.code === 'USDC') {
+              networkOptions = [
+                { id: 'POL', name: 'Polygon (POL)', code: 'POL' },
+              ];
+            } else if (currencyObj) {
+              networkOptions = [
+                { id: 'POL', name: 'Polygon', code: 'POL' },
+                { id: 'ETH', name: 'Ethereum', code: 'ETH' },
+                { id: 'BSC', name: 'Binance Smart Chain', code: 'BSC' },
+              ];
+            }
+            if (networkOptions.length > 0) {
+              return (
+                <DropdownSelect
+                  options={networkOptions}
+                  selectedValue={createWalletNetwork}
+                  onSelect={setCreateWalletNetwork}
+                  placeholder="Select network"
+                  searchable={false}
+                  label="Network"
+                />
+              );
+            }
+            return null;
+          })()}
           {createWalletType === 'virtual-account' && (
             <DropdownSelect
               options={banks.map(b => ({ id: b.id, name: b.name, code: b.id }))}
@@ -454,10 +491,10 @@ export default function CryptoTransfer() {
             style={[
               styles.continueButton,
               { backgroundColor: primaryColor, marginTop: 16 },
-              (creatingWallet || !selectedCurrency || !createWalletType || (createWalletType === 'virtual-account' && !selectedBank)) && styles.disabledButton
+              (creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)) && styles.disabledButton
             ]}
             onPress={handleCreateWallet}
-            disabled={creatingWallet || !selectedCurrency || !createWalletType || (createWalletType === 'virtual-account' && !selectedBank)}
+            disabled={creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)}
           >
             <Text style={styles.continueButtonText}>{creatingWallet ? 'Creating...' : 'Create Wallet'}</Text>
           </TouchableOpacity>

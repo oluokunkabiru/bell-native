@@ -1167,11 +1167,15 @@ class ApiService {
   }
 
   // Currencies API
-  async getCurrencies(page: number = 1, itemsPerPage: number = 15): Promise<any> {
+  async getCurrencies(page: number = 1, itemsPerPage: number = 15, category?: string): Promise<any> {
     if (!this.token) {
       throw new Error('No authentication token available');
     }
-    return this.makeRequest<any>(`/customers/currencies?page=${page}&items_per_page=${itemsPerPage}`);
+    let url = `/customers/currencies?page=${page}&items_per_page=${itemsPerPage}`;
+    if (category) {
+      url += `&category=${category}`;
+    }
+    return this.makeRequest<any>(url);
   }
 }
 
