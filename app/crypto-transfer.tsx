@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { DropdownSelect } from '@/components/DropdownSelect';
 import { apiService } from '@/services/api';
+import Modal from 'react-native-modal';
 
 const { width } = Dimensions.get('window');
 
@@ -59,6 +60,12 @@ interface CryptoWallet {
   status?: { label: string; color: string };
 }
 
+const WALLET_TYPE_OPTIONS = [
+  { id: 'crypto-account', name: 'Crypto Wallet' },
+  { id: 'virtual-account', name: 'Virtual Account' },
+  { id: 'internal-account', name: 'Internal Account' },
+];
+
 export default function CryptoTransfer() {
   const { user, appSettings, updateWalletBalance } = useAuth();
   const [currentStep, setCurrentStep] = useState<CryptoTransferStep['step']>('wallet');
@@ -85,6 +92,15 @@ export default function CryptoTransfer() {
   const [resultData, setResultData] = useState<any>(null);
   const [showPin, setShowPin] = useState(false);
   const [walletCategory, setWalletCategory] = useState<'crypto' | 'fiat' | 'all'>('crypto');
+  const [showCreateWallet, setShowCreateWallet] = useState(false);
+  const [creatingWallet, setCreatingWallet] = useState(false);
+  const [createWalletType, setCreateWalletType] = useState('crypto-account');
+  const [currencies, setCurrencies] = useState<any[]>([]);
+  const [selectedCurrency, setSelectedCurrency] = useState('');
+  const [walletProducts, setWalletProducts] = useState<any[]>([]);
+  const [selectedWalletProduct, setSelectedWalletProduct] = useState('');
+  const [banks, setBanks] = useState<any[]>([]);
+  const [selectedBank, setSelectedBank] = useState('');
 
   // Get colors from API settings
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#0066CC';
@@ -255,15 +271,51 @@ export default function CryptoTransfer() {
     }
   };
 
+  // Handle wallet creation
+  const handleCreateWallet = async () => {
+    if (!selectedCurrency || !createWalletType) return;
+    setCreatingWallet(true);
+    try {
+      const payload: any = {
+        account_type: createWalletType,
+        currency_id: selectedCurrency,
+      };
+      if (createWalletType === 'virtual-account' && selectedBank) {
+        payload.bank_id = selectedBank;
+      }
+      if (selectedWalletProduct) {
+        payload.wallet_type_id = selectedWalletProduct;
+      }
+      const response = await apiService.makeRequest<any>('/customers/wallets', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (response.status) {
+        setShowCreateWallet(false);
+        await fetchWallets(walletCategory);
+        if (response.data?.id) {
+          setSelectedWalletId(response.data.id);
+        }
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create wallet');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to create wallet');
+    } finally {
+      setCreatingWallet(false);
+    }
+  };
+
   const renderWalletSelection = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Select Wallet</Text>
       {/* Wallet Category Dropdown */}
       <DropdownSelect
         options={[
-          { id: 'crypto', name: 'Crypto Wallets', code: 'crypto' },
-          { id: 'fiat', name: 'Fiat Wallets', code: 'fiat' },
-          { id: 'all', name: 'All Wallets', code: 'all' },
+            { id: 'all', name: 'All Wallets', code: 'all' },
+            { id: 'fiat', name: 'Fiat Wallets', code: 'fiat' },
+            { id: 'crypto', name: 'Crypto Wallets', code: 'crypto' },
+         
         ]}
         selectedValue={walletCategory}
         onSelect={(val) => setWalletCategory(val as 'crypto' | 'fiat' | 'all')}
@@ -308,6 +360,63 @@ export default function CryptoTransfer() {
       >
         <Text style={styles.continueButtonText}>Continue</Text>
       </TouchableOpacity>
+      {/* Create Wallet Button */}
+      <TouchableOpacity
+        style={[styles.continueButton, { backgroundColor: '#222', marginTop: 16 }]}
+        onPress={() => setShowCreateWallet(true)}
+      >
+        <Text style={styles.continueButtonText}>+ Create New Wallet</Text>
+      </TouchableOpacity>
+      {/* Create Wallet Modal */}
+      <Modal isVisible={showCreateWallet} onBackdropPress={() => setShowCreateWallet(false)}>
+        <View style={[styles.stepContainer, { backgroundColor: '#18181b', borderRadius: 16 }]}> 
+          <Text style={styles.stepTitle}>Create Wallet</Text>
+          <DropdownSelect
+            options={WALLET_TYPE_OPTIONS}
+            selectedValue={createWalletType}
+            onSelect={setCreateWalletType}
+            placeholder="Select wallet type"
+            searchable={false}
+            label="Wallet Type"
+          />
+          <DropdownSelect
+            options={currencies.map(c => ({ id: c.id, name: `${c.name} (${c.code})`, code: c.id }))}
+            selectedValue={selectedCurrency}
+            onSelect={setSelectedCurrency}
+            placeholder="Select currency"
+            searchable={true}
+            label="Currency"
+          />
+          {/* Optionally add wallet product/type dropdown here if you have products */}
+          {createWalletType === 'virtual-account' && (
+            <DropdownSelect
+              options={banks.map(b => ({ id: b.id, name: b.name, code: b.id }))}
+              selectedValue={selectedBank}
+              onSelect={setSelectedBank}
+              placeholder="Select bank"
+              searchable={true}
+              label="Bank"
+            />
+          )}
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              { backgroundColor: primaryColor, marginTop: 16 },
+              (creatingWallet || !selectedCurrency || !createWalletType || (createWalletType === 'virtual-account' && !selectedBank)) && styles.disabledButton
+            ]}
+            onPress={handleCreateWallet}
+            disabled={creatingWallet || !selectedCurrency || !createWalletType || (createWalletType === 'virtual-account' && !selectedBank)}
+          >
+            <Text style={styles.continueButtonText}>{creatingWallet ? 'Creating...' : 'Create Wallet'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.continueButton, { backgroundColor: '#222', marginTop: 8 }]}
+            onPress={() => setShowCreateWallet(false)}
+          >
+            <Text style={styles.continueButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 
