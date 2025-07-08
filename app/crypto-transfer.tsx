@@ -105,6 +105,8 @@ export default function CryptoTransfer() {
       return;
     }
     if (amount > walletBalance) {
+        // console.log(walletBalance);
+        
       Alert.alert('Insufficient Funds', `You cannot transfer more than your available balance of ⟠${walletBalance.toLocaleString()}`);
       return;
     }
@@ -120,8 +122,10 @@ export default function CryptoTransfer() {
     setIsLoading(true);
     try {
       const wallet = user?.getPrimaryWallet || user?.get_primary_wallet;
+      console.log(wallet);
+      
       const response = await apiService.initiateCryptoWalletTransfer({
-        source_wallet_id: wallet?.wallet_id || '',
+        source_wallet_id: wallet?.id || '',
         destination_address_code: transferData.address,
         destination_address_network: transferData.networkCode,
         amount: parseFloat(transferData.amount),
@@ -154,7 +158,7 @@ export default function CryptoTransfer() {
     try {
       const wallet = user?.getPrimaryWallet || user?.get_primary_wallet;
       const response = await apiService.processCryptoWalletTransfer({
-        source_wallet_id: wallet?.wallet_id || '',
+        source_wallet_id: wallet?.id || '',
         destination_address_code: transferData.address,
         destination_address_network: transferData.networkCode,
         amount: parseFloat(transferData.amount),
