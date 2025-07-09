@@ -379,11 +379,17 @@ export default function CryptoTransfer() {
         <LoadingSpinner message="Loading wallets..." color="#FFFFFF" />
       ) : cryptoWallets.length > 0 ? (
         <DropdownSelect
-          options={cryptoWallets.map(w => ({
-            id: w.id,
-            name: `${w.provider_metadata?.id || 'Wallet'} (${w.currency?.code || ''}) - ${w.wallet_number}`,
-            code: w.ownership_label,
-          }))}
+          options={cryptoWallets.map(w => {
+            // Parse provider_metadata if it's a string
+            const meta = typeof w.provider_metadata === 'string'
+              ? JSON.parse(w.provider_metadata)
+              : w.provider_metadata;
+            return {
+              id: w.id,
+              name: `${w.wallet_type?.name || meta?.label || 'Wallet'} (${w.currency?.code || ''}${meta?.network ? ', ' + meta.network : ''}) - ${w.wallet_number}`,
+              code: w.ownership_label,
+            };
+          })}
 
           selectedValue={selectedWalletId}
           onSelect={handleWalletSelect}
