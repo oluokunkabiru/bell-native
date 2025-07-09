@@ -15,7 +15,8 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
   const { isAuthenticated, logout } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Match the default collapsed state in WebSidebar (true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -37,8 +38,7 @@ function RootLayoutContent() {
       )}
       <View style={[
         styles.content, 
-        isAuthenticated && Platform.OS === 'web' && styles.contentWithSidebar,
-        isAuthenticated && Platform.OS === 'web' && sidebarCollapsed && styles.contentWithCollapsedSidebar
+        isAuthenticated && Platform.OS === 'web' && (sidebarCollapsed ? styles.contentWithCollapsedSidebar : styles.contentWithSidebar)
       ]}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   contentWithSidebar: {
     marginLeft: Platform.OS === 'web' ? 200 : 0,
-    transition: 'margin-left 0.3s ease',
+    // Removed transition property (not supported)
   },
   contentWithCollapsedSidebar: {
     marginLeft: Platform.OS === 'web' ? 60 : 0,

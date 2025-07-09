@@ -167,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Decide which identifier to use: query param > valid subdomain > domain
     const currentIdentifier = (companyName || subdomain || domain)?.toLowerCase().trim();
 
-    console.log(currentIdentifier);
+    // console.log(currentIdentifier);
 
     
 

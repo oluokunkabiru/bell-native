@@ -232,7 +232,8 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
     ]}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={[styles.menuTitle, collapsed && styles.hidden]}>MENU</Text>
+          {/* Only show menu title when not collapsed */}
+          {!collapsed && <Text style={styles.menuTitle}>MENU</Text>}
           <TouchableOpacity 
             style={styles.collapseButton}
             onPress={toggleCollapse}
@@ -245,7 +246,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
           </TouchableOpacity>
         </View>
         
-        {/* User Profile Section */}
+        {/* User Profile Section - only show when not collapsed */}
         {!collapsed && (
           <View style={styles.profileSection}>
             {user?.profile_image_url || profileImageBase64 ? (
@@ -254,16 +255,14 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
                 style={styles.profileImage} 
               />
             ) : (
-              <View style={[styles.profileInitials, { backgroundColor: primaryColor }]}>
+              <View style={[styles.profileInitials, { backgroundColor: primaryColor }]}> 
                 <Text style={styles.initialsText}>{getInitials(user?.full_name || '')}</Text>
               </View>
             )}
             <Text style={styles.profileName}>{user?.first_name || 'User'}</Text>
-            
-           <Text style={styles.profileEmail}>{user?.email || ''}</Text>
+            <Text style={styles.profileEmail}>{user?.email || ''}</Text>
           </View>
         )}
-        
         
         <View style={styles.menuItems}>
           {filteredMenuItems.map((item, index) => (
@@ -284,6 +283,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
                   size={20} 
                   color={item.active ? '#FFFFFF' : '#94a3b8'} 
                 />
+                {/* Only show text when not collapsed */}
                 {!collapsed && (
                   <Text 
                     style={[
@@ -295,13 +295,9 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
                   </Text>
                 )}
               </View>
-              {!collapsed && item.hasSubmenu && (
-                <ChevronRight size={16} color="#94a3b8" />
-              )}
             </TouchableOpacity>
           ))}
         </View>
-        
         <TouchableOpacity 
           style={[
             styles.logoutButton,
@@ -310,6 +306,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
           onPress={onLogout}
         >
           <LogOut size={20} color="#ef4444" />
+          {/* Only show text when not collapsed */}
           {!collapsed && <Text style={styles.logoutText}>Sign Out</Text>}
         </TouchableOpacity>
       </SafeAreaView>
@@ -327,7 +324,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     zIndex: 100,
-    transition: 'width 0.3s ease',
+    // Removed transition property (not supported)
   },
   collapsedContainer: {
     width: 60,
@@ -351,9 +348,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     color: '#FFFFFF',
   },
-  hidden: {
-    display: 'none',
-  },
+  // Removed hidden style, now using conditional rendering
   collapseButton: {
     width: 24,
     height: 24,
@@ -399,12 +394,12 @@ const styles = StyleSheet.create({
   menuItems: {
     flex: 1,
     paddingVertical: 8,
-    overflow: 'auto',
+    // Removed overflow: 'auto' (not supported)
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingVertical: 12,
     paddingHorizontal: 20,
   },
@@ -413,16 +408,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  collapsedMenuItem: {
+    paddingHorizontal: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   collapsedMenuItemContent: {
     justifyContent: 'center',
+    gap: 0,
   },
   activeMenuItem: {
     backgroundColor: '#1A1A1A',
-  },
-  collapsedMenuItem: {
-    justifyContent: 'center',
-    paddingHorizontal: 0,
-    alignItems: 'center',
   },
   menuItemText: {
     fontSize: 14,
