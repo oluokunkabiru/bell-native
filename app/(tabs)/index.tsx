@@ -39,6 +39,7 @@ import {
   Info,
   Share2,
   Menu,
+  Bitcoin,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -272,7 +273,7 @@ export default function DashboardScreen() {
     },
     { 
       title: 'Crypto Transfer',
-      icon: Send, // You can replace with a crypto icon if available
+      icon: Bitcoin, // You can replace with a crypto icon if available
       color: '#00b894',
       route: '/crypto-transfer',
       gradient: [secondaryColor, secondaryColor],

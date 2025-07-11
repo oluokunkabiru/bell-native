@@ -25,7 +25,7 @@
       "short_name": "MyBeller",
       "start_url": "/?utm_source=pwa",
       "display": "standalone",
-      "background_color": "#000000",
+      "background_color": "#e6e6e6",
       "theme_color": "#2563EB",
       "icons": [
         {

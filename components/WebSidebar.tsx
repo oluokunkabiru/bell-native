@@ -17,7 +17,8 @@ import {
   Tv,
   PiggyBank,
   ChevronLeft,
-  Send
+  Send,
+  Bitcoin
 } from 'lucide-react-native';
 import { router, usePathname } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -124,7 +125,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
     },
     {
       title: 'Crypto Transfer',
-      icon: Send, // You can replace with a crypto icon if available
+      icon: Bitcoin, // You can replace with a crypto icon if available
       route: '/crypto-transfer',
       active: pathname === '/crypto-transfer',
       key: 'display-crypto-transfer-menu',

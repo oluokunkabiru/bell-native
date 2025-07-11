@@ -82,7 +82,7 @@ export default function LoginScreen() {
   const appName        = appSettings?.['customized-app-name']          || 'Gobeller';
   const primaryColor   = appSettings?.['customized-app-primary-color'] || '#4361ee';
   const secondaryColor = appSettings?.['customized-app-secondary-color'] || '#3a0ca3';
-  console.log(primaryColor);
+  // console.log(primaryColor);
   
   
 
