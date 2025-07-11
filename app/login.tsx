@@ -121,24 +121,37 @@ export default function LoginScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-              {organization?.public_logo_url || organization?.customized_app_settings && (
+              {/* {organization?.public_logo_url || organization?.customized_app_settings && (
                 <View style={styles.logoContainer}>
-                  {/* <Image
-                    source={{ uri: organization.public_logo_url || organization?.customized_app_settings?.customized-app-logo-url }}
-                    style={styles.logo}
-                    resizeMode="contain"
-                  /> */}
+                
 
 
 
                   <Image
-                    source={{ uri: organization?.public_logo_url || organization?.customized_app_settings?.['customized-app-logo-url'] }}
+                    source={{ uri: organization?.public_logo_url ??  organization?.customized_app_settings?.['customized-app-logo-url'] }}
                     style={styles.logo}
                     resizeMode="contain"
                   />
 
                 </View>
-              )}
+              )} */}
+
+
+
+              {(organization?.public_logo_url || organization?.customized_app_settings?.['customized-app-logo-url']) && (
+              <View style={styles.logoContainer}>
+                <Image
+                  source={{
+                    uri:
+                      organization?.public_logo_url ??
+                      organization?.customized_app_settings?.['customized-app-logo-url'],
+                  }}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+
               <Text style={styles.title}>{appName}</Text>
               <Text style={styles.subtitle}>
                 {organization?.description || 'Sign in to your account'}
