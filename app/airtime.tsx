@@ -294,10 +294,10 @@ export default function AirtimePurchase() {
           {/* Phone Number Input */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Phone Number</Text>
-            <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
               <Smartphone size={20} color="#9CA3AF" />
               <TextInput
-                style={styles.textInput}
+                style={styles.input}
                 placeholder="Enter phone number (e.g., 08012345678)"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
@@ -311,10 +311,10 @@ export default function AirtimePurchase() {
           {/* Amount Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount</Text>
-            <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
               <Text style={styles.currencySymbol}>₦</Text>
               <TextInput
-                style={styles.textInput}
+                style={styles.input}
                 placeholder="Enter amount"
                 value={amount}
                 onChangeText={setAmount}
@@ -530,19 +530,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  inputContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
-  textInput: {
+  input: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
     color: '#FFFFFF',
   },
   currencySymbol: {

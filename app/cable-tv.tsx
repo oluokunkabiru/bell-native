@@ -245,6 +245,7 @@ export default function CableTvSubscription() {
         onSelect={handleProviderSelect}
         placeholder="Choose cable TV provider"
         label="Cable TV Provider"
+        style={styles.input}
       />
     </View>
   );
@@ -259,14 +260,16 @@ export default function CableTvSubscription() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Smart Card Number</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter smart card number"
-          value={smartCardNumber}
-          onChangeText={setSmartCardNumber}
-          keyboardType="numeric"
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter smart card number"
+            value={smartCardNumber}
+            onChangeText={setSmartCardNumber}
+            keyboardType="numeric"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -394,15 +397,17 @@ export default function CableTvSubscription() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Phone Number</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter phone number (e.g., 08012345678)"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
-          maxLength={11}
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter phone number (e.g., 08012345678)"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+            maxLength={11}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -883,6 +888,25 @@ const styles = StyleSheet.create({
   doneButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
     color: '#FFFFFF',
   },
 });

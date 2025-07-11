@@ -242,22 +242,28 @@ export default function ElectricityBillPayment() {
         <LoadingSpinner message="Loading providers..." color="#FFFFFF" />
       ) : (
         <>
-          <DropdownSelect
-            options={discos}
-            selectedValue={selectedDisco}
-            onSelect={setSelectedDisco}
-            placeholder="Choose electricity provider"
-            searchable={true}
-            label="Electricity Distribution Company"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Electricity Distribution Company</Text>
+            <DropdownSelect
+              options={discos}
+              selectedValue={selectedDisco}
+              onSelect={setSelectedDisco}
+              placeholder="Choose electricity provider"
+              searchable={true}
+              style={styles.input}
+            />
+          </View>
 
-          <DropdownSelect
-            options={meterTypes}
-            selectedValue={selectedMeterType}
-            onSelect={setSelectedMeterType}
-            placeholder="Choose meter type"
-            label="Meter Type"
-          />
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Meter Type</Text>
+            <DropdownSelect
+              options={meterTypes}
+              selectedValue={selectedMeterType}
+              onSelect={setSelectedMeterType}
+              placeholder="Choose meter type"
+              style={styles.input}
+            />
+          </View>
 
           <TouchableOpacity
             style={[
@@ -287,14 +293,16 @@ export default function ElectricityBillPayment() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Meter Number</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter meter number"
-          value={meterNumber}
-          onChangeText={setMeterNumber}
-          keyboardType="numeric"
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter meter number"
+            value={meterNumber}
+            onChangeText={setMeterNumber}
+            keyboardType="numeric"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -339,14 +347,16 @@ export default function ElectricityBillPayment() {
         <Text style={styles.inputLabel}>Amount</Text>
         <View style={styles.amountContainer}>
           <Text style={styles.currencySymbol}>₦</Text>
-          <TextInput
-            style={styles.amountInput}
-            placeholder="0.00"
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="numeric"
-            placeholderTextColor="#9CA3AF"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="0.00"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
         </View>
         {amount && parseFloat(amount) > walletBalance && (
           <Text style={styles.errorText}>Amount exceeds available balance</Text>
@@ -438,16 +448,18 @@ export default function ElectricityBillPayment() {
       <View style={styles.pinContainer}>
         <Text style={styles.pinLabel}>Enter your 4-digit transaction PIN to complete the purchase</Text>
         <View style={styles.pinInputContainer}>
-          <TextInput
-            style={styles.pinInput}
-            placeholder="Enter PIN"
-            value={transactionPin}
-            onChangeText={setTransactionPin}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry={!showPin}
-            placeholderTextColor="#9CA3AF"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter PIN"
+              value={transactionPin}
+              onChangeText={setTransactionPin}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry={!showPin}
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
           <TouchableOpacity
             style={styles.pinToggle}
             onPress={() => setShowPin(!showPin)}
@@ -924,6 +936,25 @@ const styles = StyleSheet.create({
   doneButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
     color: '#FFFFFF',
   },
 });

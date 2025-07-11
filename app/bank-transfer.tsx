@@ -265,6 +265,7 @@ export default function BankTransfer() {
           placeholder="Choose a bank"
           searchable={true}
           label="Bank"
+          style={styles.input}
         />
       ) : (
         <View style={styles.errorContainer}>
@@ -287,18 +288,20 @@ export default function BankTransfer() {
       
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Account Number</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter 10-digit account number"
-          value={transferData.accountNumber}
-          onChangeText={(text) => {
-            setTransferData(prev => ({ ...prev, accountNumber: text }));
-            setVerificationError(null);
-          }}
-          keyboardType="numeric"
-          maxLength={10}
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter 10-digit account number"
+            value={transferData.accountNumber}
+            onChangeText={(text) => {
+              setTransferData(prev => ({ ...prev, accountNumber: text }));
+              setVerificationError(null);
+            }}
+            keyboardType="numeric"
+            maxLength={10}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
         {verificationError && (
           <View style={styles.errorMessageContainer}>
             <AlertCircle size={16} color="#EF4444" />
@@ -343,10 +346,12 @@ export default function BankTransfer() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Amount</Text>
-        <View style={styles.amountContainer}>
-          <Text style={styles.currencySymbol}>₦</Text>
+        <View style={styles.inputWrapper}>
+          <View style={styles.currencySymbolContainer}>
+            <Text style={styles.currencySymbol}>₦</Text>
+          </View>
           <TextInput
-            style={styles.amountInput}
+            style={styles.input}
             placeholder="0.00"
             value={transferData.amount}
             onChangeText={(text) => setTransferData(prev => ({ ...prev, amount: text }))}
@@ -361,13 +366,15 @@ export default function BankTransfer() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Description</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter transfer description"
-          value={transferData.description}
-          onChangeText={(text) => setTransferData(prev => ({ ...prev, description: text }))}
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter transfer description"
+            value={transferData.description}
+            onChangeText={(text) => setTransferData(prev => ({ ...prev, description: text }))}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -948,5 +955,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  currencySymbolContainer: {
+    marginRight: 8,
   },
 });

@@ -357,17 +357,19 @@ export default function WalletTransfer() {
       
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Destination Wallet Number</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter wallet number"
-          value={transferData.destinationWalletNumber}
-          onChangeText={(text) => {
-            setTransferData(prev => ({ ...prev, destinationWalletNumber: text }));
-            setVerificationError(null);
-          }}
-          keyboardType="numeric"
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter wallet number"
+            value={transferData.destinationWalletNumber}
+            onChangeText={(text) => {
+              setTransferData(prev => ({ ...prev, destinationWalletNumber: text }));
+              setVerificationError(null);
+            }}
+            keyboardType="numeric"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
         {verificationError && (
           <View style={styles.errorContainer}>
             <AlertCircle size={16} color="#EF4444" />
@@ -410,14 +412,16 @@ export default function WalletTransfer() {
         <Text style={styles.inputLabel}>Amount</Text>
         <View style={styles.amountContainer}>
           <Text style={styles.currencySymbol}>₦</Text>
-          <TextInput
-            style={styles.amountInput}
-            placeholder="0.00"
-            value={transferData.amount}
-            onChangeText={(text) => setTransferData(prev => ({ ...prev, amount: text }))}
-            keyboardType="numeric"
-            placeholderTextColor="#9CA3AF"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="0.00"
+              value={transferData.amount}
+              onChangeText={(text) => setTransferData(prev => ({ ...prev, amount: text }))}
+              keyboardType="numeric"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
         </View>
         {transferData.amount && parseFloat(transferData.amount) > walletBalance && (
           <Text style={styles.errorText}>Amount exceeds available balance</Text>
@@ -426,13 +430,15 @@ export default function WalletTransfer() {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Description</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter transfer description"
-          value={transferData.description}
-          onChangeText={(text) => setTransferData(prev => ({ ...prev, description: text }))}
-          placeholderTextColor="#9CA3AF"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter transfer description"
+            value={transferData.description}
+            onChangeText={(text) => setTransferData(prev => ({ ...prev, description: text }))}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -510,16 +516,18 @@ export default function WalletTransfer() {
       <View style={styles.pinContainer}>
         <Text style={styles.pinLabel}>Enter your 4-digit transaction PIN to complete the transfer</Text>
         <View style={styles.pinInputContainer}>
-          <TextInput
-            style={styles.pinInput}
-            placeholder="••••"
-            value={transferData.transactionPin}
-            onChangeText={(text) => setTransferData(prev => ({ ...prev, transactionPin: text }))}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry={!showPin}
-            placeholderTextColor="#9CA3AF"
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.pinInput}
+              placeholder="••••"
+              value={transferData.transactionPin}
+              onChangeText={(text) => setTransferData(prev => ({ ...prev, transactionPin: text }))}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry={!showPin}
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
           <TouchableOpacity
             style={styles.pinToggle}
             onPress={() => setShowPin(!showPin)}
@@ -1051,6 +1059,25 @@ const styles = StyleSheet.create({
   createWalletButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
     color: '#FFFFFF',
   },
 });
