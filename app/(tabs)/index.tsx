@@ -588,8 +588,8 @@ export default function DashboardScreen() {
               style={styles.viewAllButton}
               onPress={() => router.push('/(tabs)/analytics')}
             >
-              <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
-              <ChevronRight size={16} color={primaryColor} />
+              {/* <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
+              <ChevronRight size={16} color={primaryColor} /> */}
             </TouchableOpacity>
           </View>
 
