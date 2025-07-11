@@ -121,13 +121,22 @@ export default function LoginScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-              {organization?.public_logo_url && (
+              {organization?.public_logo_url || organization?.customized_app_settings && (
                 <View style={styles.logoContainer}>
+                  {/* <Image
+                    source={{ uri: organization.public_logo_url || organization?.customized_app_settings?.customized-app-logo-url }}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  /> */}
+
+
+
                   <Image
-                    source={{ uri: organization.public_logo_url }}
+                    source={{ uri: organization?.public_logo_url || organization?.customized_app_settings?.['customized-app-logo-url'] }}
                     style={styles.logo}
                     resizeMode="contain"
                   />
+
                 </View>
               )}
               <Text style={styles.title}>{appName}</Text>

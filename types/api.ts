@@ -227,9 +227,15 @@ export interface Organization {
   customized_app_displayable_menu_items: {
     [key: string]: boolean;
   };
+  
+   customized_app_settings: {
+    [key: string]: boolean;
+  };
+
   organization_subscribed_features: {
     [key: string]: boolean;
   };
+
 }
 
 export interface OrganizationResponse {

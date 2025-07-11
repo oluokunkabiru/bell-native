@@ -67,7 +67,7 @@ interface Transaction {
 }
 
 export default function DashboardScreen() {
-  const { user, appSettings, walletBalance, refreshProfile, logout } = useAuth();
+  const { user, appSettings, refreshProfile, logout } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -81,21 +81,33 @@ export default function DashboardScreen() {
     weeklyCount: 0,
     weeklyAmount: 0
   });
+  const [wallets, setWallets] = useState<any[]>([]);
 
   // Get colors from API settings with fallbacks
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#4361ee';
   const secondaryColor = appSettings?.['customized-app-secondary-color'] || '#3f37c9';
 
-  // Get wallet details
-  const wallet = user?.getPrimaryWallet || user?.get_primary_wallet;
-
   // Get menu display settings
   const displayMenuItems = appSettings?.['customized-app-displayable-menu-items'] || {};
+
+  const fetchWallets = async () => {
+    try {
+      const response = await apiService.getWallets(1, 15);
+      if (response.status && response.data?.data) {
+        setWallets(response.data.data);
+      } else {
+        setWallets([]);
+      }
+    } catch (error) {
+      setWallets([]);
+    }
+  };
 
   useEffect(() => {
     if (user) {
       loadData();
       checkKycStatus();
+      fetchWallets();
     }
   }, [user]);
 
@@ -261,6 +273,17 @@ export default function DashboardScreen() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  // Add this helper function near the top (after imports)
+  const getCurrencyIcon = (currencyCode: string) => {
+    switch (currencyCode) {
+      case 'NGN': return '🇳🇬';
+      case 'USD': return '🇺🇸';
+      case 'EUR': return '🇪🇺';
+      // Add more as needed
+      default: return '💰';
+    }
+  };
+
   // Filter quick actions based on API settings
   const allQuickActions = [
     { 
@@ -369,7 +392,7 @@ export default function DashboardScreen() {
     },
     {
       title: 'Available Balance',
-      value: `₦${walletBalance.toLocaleString()}`,
+      value: `₦${wallets.reduce((sum, w) => sum + parseFloat(w.balance || '0'), 0).toLocaleString()}`,
       description: 'Current wallet balance',
       icon: DollarSign,
       color: '#f59e0b',
@@ -460,42 +483,35 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Balance Card */}
-        <View style={styles.balanceCardContainer}>
-          <LinearGradient
-            colors={[primaryColor, secondaryColor]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.balanceCard}
+        {/* Wallets Slider/Blocks */}
+        <View style={styles.walletsSliderContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.walletsSlider}
           >
-            <View style={styles.balanceHeader}>
-              <Text style={styles.balanceTitle}>Wallet Balance</Text>
-              <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
-                {showBalance ? (
-                  <Eye size={20} color="#ffffff" />
-                ) : (
-                  <EyeOff size={20} color="#ffffff" />
-                )}
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.balanceAmount}>
-              {showBalance ? `₦${walletBalance.toLocaleString()}` : '₦•••••••'}
-            </Text>
-            <View style={styles.accountInfo}>
-              <Text style={styles.accountNumber}>
-                {wallet ? `Account: ${wallet.wallet_number}` : 'No wallet found'}
-              </Text>
-              <View style={styles.accountActions}>
-                <TouchableOpacity 
-                  style={styles.accountActionButton}
-                  onPress={() => setShowAccountDetails(true)}
-                >
-                  <Info size={16} color="#ffffff" />
-                  <Text style={styles.accountActionText}>Details</Text>
-                </TouchableOpacity>
+            {wallets.map((w, idx) => (
+              <View key={w?.id || idx} style={styles.walletBlock}>
+                <Text style={styles.walletCurrencyIcon}>
+                  {getCurrencyIcon(w?.currency?.code || '')}
+                </Text>
+                <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
+                <Text style={styles.walletBalance}>
+                  {(w?.currency?.symbol || '₦')}{parseFloat(w?.balance || '0').toLocaleString()}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
+                  <TouchableOpacity
+                    style={{ marginLeft: 8 }}
+                    onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
+                  >
+                    <Copy size={18} color="#94a3b8" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{w.wallet_number}</Text>
               </View>
-            </View>
-          </LinearGradient>
+            ))}
+          </ScrollView>
         </View>
 
         {/* Quick Actions */}
@@ -506,7 +522,7 @@ export default function DashboardScreen() {
               <TouchableOpacity 
                 key={index} 
                 style={styles.quickActionItem}
-                onPress={() => router.push(action.route)}
+                onPress={() => router.push(action.route as any)}
               >
                 <LinearGradient
                   colors={[secondaryColor, secondaryColor]}
@@ -543,7 +559,7 @@ export default function DashboardScreen() {
             {insightCards.map((card, index) => (
               <TouchableOpacity key={index} style={styles.insightCard}>
                 <LinearGradient
-                  colors={card.gradient}
+                  colors={card.gradient as [string, string]}
                   style={styles.insightCardGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -684,7 +700,7 @@ export default function DashboardScreen() {
             </View>
 
             <ScrollView style={styles.modalContent}>
-              {wallet ? (
+              {wallets.length > 0 ? (
                 <>
                   <View style={styles.accountDetailCard}>
                     <LinearGradient
@@ -697,12 +713,12 @@ export default function DashboardScreen() {
                         <Text style={styles.accountDetailCardTitle}>Wallet Information</Text>
                         <Wallet size={24} color="#FFFFFF" />
                       </View>
-                      <Text style={styles.accountDetailCardNumber}>{wallet.wallet_number}</Text>
+                      <Text style={styles.accountDetailCardNumber}>{wallets[0].wallet_number}</Text>
                       <View style={styles.accountDetailCardFooter}>
                         <Text style={styles.accountDetailCardName}>{user.full_name}</Text>
                         <TouchableOpacity 
                           style={styles.copyAccountButton}
-                          onPress={() => copyToClipboard(wallet.wallet_number, 'Account number')}
+                          onPress={() => copyToClipboard(wallets[0].wallet_number, 'Account number')}
                         >
                           <Copy size={16} color="#FFFFFF" />
                           <Text style={styles.copyAccountText}>Copy</Text>
@@ -715,43 +731,43 @@ export default function DashboardScreen() {
                     <View style={styles.accountDetailRow}>
                       <Text style={styles.accountDetailLabel}>Account Type</Text>
                       <Text style={styles.accountDetailValue}>
-                        {wallet.wallet_type?.name || 'Standard Wallet'}
+                        {wallets[0].wallet_type?.name || 'Standard Wallet'}
                       </Text>
                     </View>
                     <View style={styles.accountDetailRow}>
                       <Text style={styles.accountDetailLabel}>Currency</Text>
                       <Text style={styles.accountDetailValue}>
-                        {wallet.currency?.name || 'Nigerian Naira'} ({wallet.currency?.code || 'NGN'})
+                        {wallets[0].currency?.name || 'Nigerian Naira'} ({wallets[0].currency?.code || 'NGN'})
                       </Text>
                     </View>
                     <View style={styles.accountDetailRow}>
                       <Text style={styles.accountDetailLabel}>Status</Text>
                       <View style={[
                         styles.accountStatusBadge,
-                        { backgroundColor: wallet.status?.color || '#10B981' }
+                        { backgroundColor: wallets[0].status?.color || '#10B981' }
                       ]}>
                         <Text style={styles.accountStatusText}>
-                          {wallet.status?.label || 'Active'}
+                          {wallets[0].status?.label || 'Active'}
                         </Text>
                       </View>
                     </View>
                     <View style={styles.accountDetailRow}>
                       <Text style={styles.accountDetailLabel}>Balance</Text>
                       <Text style={styles.accountDetailValue}>
-                        ₦{parseFloat(wallet.balance).toLocaleString()}
+                        ₦{parseFloat(wallets[0].balance).toLocaleString()}
                       </Text>
                     </View>
                     <View style={styles.accountDetailRow}>
                       <Text style={styles.accountDetailLabel}>Created Date</Text>
                       <Text style={styles.accountDetailValue}>
-                        {new Date(wallet.created_at).toLocaleDateString()}
+                        {new Date(wallets[0].created_at).toLocaleDateString()}
                       </Text>
                     </View>
-                    {wallet.bank && (
+                    {wallets[0].bank && (
                       <View style={styles.accountDetailRow}>
                         <Text style={styles.accountDetailLabel}>Bank</Text>
                         <Text style={styles.accountDetailValue}>
-                          {wallet.bank.name}
+                          {wallets[0].bank.name}
                         </Text>
                       </View>
                     )}
@@ -760,7 +776,7 @@ export default function DashboardScreen() {
                   <TouchableOpacity 
                     style={[styles.shareAccountButton, { backgroundColor: primaryColor }]}
                     onPress={() => {
-                      const shareText = `My ${appSettings?.['customized-app-name'] || 'App'} Account Details:\nAccount Number: ${wallet.wallet_number}\nAccount Name: ${user.full_name}`;
+                      const shareText = `My ${appSettings?.['customized-app-name'] || 'App'} Account Details:\nAccount Number: ${wallets[0].wallet_number}\nAccount Name: ${user.full_name}`;
                       
                       if (Platform.OS === 'web') {
                         if (navigator.share) {
@@ -1442,5 +1458,49 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  walletsSliderContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    alignItems: 'center',
+  },
+  walletsSlider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  walletBlock: {
+    width: 220,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#1e293b',
+    marginRight: 16,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+      android: { elevation: 3 },
+      web: { boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+    }),
+  },
+  walletCurrencyIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  walletType: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  walletBalance: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'Poppins-Bold',
+    marginBottom: 4,
+  },
+  walletCurrencyCode: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontFamily: 'Poppins-Regular',
   },
 });
