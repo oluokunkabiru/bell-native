@@ -485,7 +485,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Wallets Slider/Blocks */}
-        <View style={[styles.walletsSliderContainer, { alignItems: 'center' }]}> 
+        {/* <View style={[styles.walletsSliderContainer, { alignItems: 'center' }]}> 
           <View style={{ alignSelf: 'center', width: '100%' }}>
             <ScrollView
               horizontal
@@ -515,7 +515,44 @@ export default function DashboardScreen() {
               ))}
             </ScrollView>
           </View>
+        </View> */}
+
+
+
+        {/* Wallets Slider/Blocks */}
+<View style={styles.walletsOuter}>
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.walletsSlider}
+  >
+    {wallets.map((w, idx) => (
+      <View key={w?.id || idx} style={styles.walletBlock}>
+        <Text style={styles.walletCurrencyIcon}>
+          {getCurrencyIcon(w?.currency?.code || '')}
+        </Text>
+        <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
+        <Text style={styles.walletBalance}>
+          {(w?.currency?.symbol || '₦')}
+          {parseFloat(w?.balance || '0').toLocaleString()}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+          <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
+          <TouchableOpacity
+            style={{ marginLeft: 8 }}
+            onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
+          >
+            <Copy size={18} color="#94a3b8" />
+          </TouchableOpacity>
         </View>
+        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+          {w.wallet_number?.slice(-10)}
+        </Text>
+      </View>
+    ))}
+  </ScrollView>
+</View>
+
 
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
@@ -821,6 +858,20 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+
+
+    walletsOuter: {
+    alignItems: 'center',    // center *children* horizontally
+    justifyContent: 'center',// center vertically if there’s extra space
+    width: '100%',           // take full row
+    paddingVertical: 10,
+  },
+  // existing:
+  walletsSlider: {
+    paddingHorizontal: 20,
+  },
+
+
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
@@ -1467,11 +1518,11 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     //  alignItems: 'center'
   },
-  walletsSlider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
+  // walletsSlider: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   gap: 16,
+  // },
   walletBlock: {
     width: 220,
     padding: 20,

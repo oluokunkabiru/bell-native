@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Platform,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, ArrowUpRight, ArrowDownRight, Filter, Calendar, ChevronDown, CircleAlert as AlertCircle } from 'lucide-react-native';
@@ -147,170 +148,173 @@ export default function TransactionsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Transactions</Text>
-        <View style={styles.headerRight}>
-          <View style={styles.balanceInfo}>
-            <Text style={styles.balanceLabel}>Balance:</Text>
-            <Text style={styles.balanceAmount}>₦{walletBalance.toLocaleString()}</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => setFilterVisible(!filterVisible)}
-          >
-            <Filter size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Filter Options */}
-      {filterVisible && (
-        <View style={styles.filterOptions}>
-          <TouchableOpacity 
-            style={[styles.filterOption, selectedFilter === 'all' && { backgroundColor: `${primaryColor}20` }]}
-            onPress={() => setSelectedFilter('all')}
-          >
-            <Text style={[styles.filterText, selectedFilter === 'all' && { color: primaryColor }]}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterOption, selectedFilter === 'credit' && { backgroundColor: '#10b98120' }]}
-            onPress={() => setSelectedFilter('credit')}
-          >
-            <Text style={[styles.filterText, selectedFilter === 'credit' && { color: '#10b981' }]}>Income</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterOption, selectedFilter === 'debit' && { backgroundColor: '#ef444420' }]}
-            onPress={() => setSelectedFilter('debit')}
-          >
-            <Text style={[styles.filterText, selectedFilter === 'debit' && { color: '#ef4444' }]}>Expense</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dateFilter}>
-            <Calendar size={16} color="#94a3b8" />
-            <Text style={styles.dateFilterText}>Date</Text>
-            <ChevronDown size={16} color="#94a3b8" />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#94a3b8" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search transactions..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-      </View>
-
-      {/* Summary Cards */}
-      <View style={styles.summaryContainer}>
-        <View style={[styles.summaryCard, { backgroundColor: '#10b98120' }]}>
-          <Text style={styles.summaryLabel}>Total In</Text>
-          <Text style={[styles.summaryAmount, { color: '#10b981' }]}>₦{totalIn.toLocaleString()}</Text>
-        </View>
-        <View style={[styles.summaryCard, { backgroundColor: '#ef444420' }]}>
-          <Text style={styles.summaryLabel}>Total Out</Text>
-          <Text style={[styles.summaryAmount, { color: '#ef4444' }]}>₦{totalOut.toLocaleString()}</Text>
-        </View>
-      </View>
-
-      {/* Transactions List */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={primaryColor} />
-          <Text style={styles.loadingText}>Loading transactions...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.transactionsList}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor={primaryColor}
-              colors={[primaryColor]}
-            />
-          }
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const isCloseToBottom = (layoutMeasurement.height + contentOffset.y) >= (contentSize.height - 20);
-            
-            if (isCloseToBottom && hasMorePages && !isLoadingMore) {
-              handleLoadMore();
-            }
-          }}
-          scrollEventThrottle={400}
-        >
-          {filteredTransactions.length > 0 ? (
-            <>
-              {filteredTransactions.map((transaction) => (
-                <TouchableOpacity 
-                  key={transaction.id} 
-                  style={styles.transactionItem}
-                  onPress={() => handleTransactionPress(transaction)}
-                >
-                  <View style={styles.transactionLeft}>
-                    <View style={[
-                      styles.transactionIconContainer,
-                      { backgroundColor: transaction.transaction_type === 'credit' ? '#10b98120' : '#ef444420' }
-                    ]}>
-                      {transaction.transaction_type === 'credit' ? (
-                        <ArrowDownRight size={18} color="#10b981" />
-                      ) : (
-                        <ArrowUpRight size={18} color="#ef4444" />
-                      )}
-                    </View>
-                    <View style={styles.transactionInfo}>
-                      <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                      <Text style={styles.transactionDate}>{formatDate(transaction.created_at)}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.transactionRight}>
-                    <Text style={[
-                      styles.transactionAmount,
-                      { color: transaction.transaction_type === 'credit' ? '#10b981' : '#ef4444' }
-                    ]}>
-                      {transaction.transaction_type === 'credit' ? '+' : '-'}₦{parseFloat(transaction.user_amount).toLocaleString()}
-                    </Text>
-                    <View style={[
-                      styles.statusBadge, 
-                      { backgroundColor: transaction.status?.color || '#6B7280' }
-                    ]}>
-                      <Text style={styles.statusText}>{transaction.status?.label || 'Unknown'}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-              
-              {isLoadingMore && (
-                <View style={styles.loadingMoreContainer}>
-                  <ActivityIndicator size="small" color={primaryColor} />
-                  <Text style={styles.loadingMoreText}>Loading more...</Text>
-                </View>
-              )}
-            </>
-          ) : (
-            <View style={styles.emptyState}>
-              <AlertCircle size={64} color="#94a3b8" />
-              <Text style={styles.emptyTitle}>No transactions found</Text>
-              <Text style={styles.emptyDescription}>
-                {searchQuery 
-                  ? 'Try adjusting your search criteria'
-                  : 'Your transaction history will appear here'
-                }
-              </Text>
+      <View style={styles.responsiveWrapper}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Transactions</Text>
+          <View style={styles.headerRight}>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.balanceLabel}>Balance:</Text>
+              <Text style={styles.balanceAmount}>₦{walletBalance.toLocaleString()}</Text>
             </View>
-          )}
-          
-          {/* Bottom Spacing */}
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
-      )}
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setFilterVisible(!filterVisible)}
+            >
+              <Filter size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Filter Options */}
+        {filterVisible && (
+          <View style={styles.filterOptions}>
+            <TouchableOpacity 
+              style={[styles.filterOption, selectedFilter === 'all' && { backgroundColor: `${primaryColor}20` }]}
+              onPress={() => setSelectedFilter('all')}
+            >
+              <Text style={[styles.filterText, selectedFilter === 'all' && { color: primaryColor }]}>All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterOption, selectedFilter === 'credit' && { backgroundColor: '#10b98120' }]}
+              onPress={() => setSelectedFilter('credit')}
+            >
+              <Text style={[styles.filterText, selectedFilter === 'credit' && { color: '#10b981' }]}>Income</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterOption, selectedFilter === 'debit' && { backgroundColor: '#ef444420' }]}
+              onPress={() => setSelectedFilter('debit')}
+            >
+              <Text style={[styles.filterText, selectedFilter === 'debit' && { color: '#ef4444' }]}>Expense</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateFilter}>
+              <Calendar size={16} color="#94a3b8" />
+              <Text style={styles.dateFilterText}>Date</Text>
+              <ChevronDown size={16} color="#94a3b8" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Search size={20} color="#94a3b8" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search transactions..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+        </View>
+
+        {/* Responsive Transaction Summary Cards */}
+        <View style={styles.transactionSummaryContainer}>
+          <View style={[styles.transactionSummaryCard, { backgroundColor: '#10b98120' }]}> 
+            <Text style={styles.summaryLabel}>Total In</Text>
+            <Text style={[styles.summaryAmount, { color: '#10b981' }]}>₦{totalIn.toLocaleString()}</Text>
+          </View>
+          <View style={[styles.transactionSummaryCard, { backgroundColor: '#ef444420' }]}> 
+            <Text style={styles.summaryLabel}>Total Out</Text>
+            <Text style={[styles.summaryAmount, { color: '#ef4444' }]}>₦{totalOut.toLocaleString()}</Text>
+          </View>
+        </View>
+
+        {/* Transactions List */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={primaryColor} />
+            <Text style={styles.loadingText}>Loading transactions...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.transactionsList}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={primaryColor}
+                colors={[primaryColor]}
+              />
+            }
+            onScroll={({ nativeEvent }) => {
+              const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+              const isCloseToBottom = (layoutMeasurement.height + contentOffset.y) >= (contentSize.height - 20);
+              
+              if (isCloseToBottom && hasMorePages && !isLoadingMore) {
+                handleLoadMore();
+              }
+            }}
+            scrollEventThrottle={400}
+          >
+            {filteredTransactions.length > 0 ? (
+              <>
+                {filteredTransactions.map((transaction) => (
+                  <TouchableOpacity 
+                    key={transaction.id} 
+                    style={styles.transactionItem}
+                    onPress={() => handleTransactionPress(transaction)}
+                  >
+                    <View style={styles.transactionLeft}>
+                      <View style={
+                        [styles.transactionIconContainer,
+                          { backgroundColor: transaction.transaction_type === 'credit' ? '#10b98120' : '#ef444420' }
+                        ]
+                      }>
+                        {transaction.transaction_type === 'credit' ? (
+                          <ArrowDownRight size={18} color="#10b981" />
+                        ) : (
+                          <ArrowUpRight size={18} color="#ef4444" />
+                        )}
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text style={styles.transactionDescription}>{transaction.description}</Text>
+                        <Text style={styles.transactionDate}>{formatDate(transaction.created_at)}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.transactionRight}>
+                      <Text style={
+                        [styles.transactionAmount,
+                          { color: transaction.transaction_type === 'credit' ? '#10b981' : '#ef4444' }
+                        ]
+                      }>
+                        {transaction.transaction_type === 'credit' ? '+' : '-'}₦{parseFloat(transaction.user_amount).toLocaleString()}
+                      </Text>
+                      <View style={
+                        [styles.statusBadge, 
+                          { backgroundColor: transaction.status?.color || '#6B7280' }
+                        ]
+                      }>
+                        <Text style={styles.statusText}>{transaction.status?.label || 'Unknown'}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {isLoadingMore && (
+                  <View style={styles.loadingMoreContainer}>
+                    <ActivityIndicator size="small" color={primaryColor} />
+                    <Text style={styles.loadingMoreText}>Loading more...</Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.emptyState}>
+                <AlertCircle size={64} color="#94a3b8" />
+                <Text style={styles.emptyTitle}>No transactions found</Text>
+                <Text style={styles.emptyDescription}>
+                  {searchQuery 
+                    ? 'Try adjusting your search criteria'
+                    : 'Your transaction history will appear here'
+                  }
+                </Text>
+              </View>
+            )}
+            {/* Bottom Spacing */}
+            <View style={styles.bottomSpacing} />
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -319,13 +323,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
+    alignItems: 'center',
     paddingRight: Platform.OS === 'web' ? 200 : 0, // Add padding for web sidebar
+  },
+  responsiveWrapper: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'transparent',
+    ...Platform.select({
+      web: { marginTop: 32, marginBottom: 32 },
+      default: {},
+    }),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 20,
     paddingVertical: 16,
     backgroundColor: '#0f172a',
   },
@@ -361,12 +376,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterOptions: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
+    flexDirection: Platform.OS === 'web' ? 'row' : 'row',
+    flexWrap: Platform.OS === 'web' ? 'nowrap' : 'wrap',
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 20,
     paddingVertical: 12,
     backgroundColor: '#1e293b',
     borderRadius: 16,
-    marginHorizontal: 20,
+    marginHorizontal: Platform.OS === 'web' ? 0 : 20,
     marginBottom: 16,
     gap: 8,
   },
@@ -397,7 +413,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 20,
     paddingVertical: 12,
   },
   searchBar: {
@@ -416,14 +432,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   summaryContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
     gap: 12,
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 20,
+    paddingVertical: 12,
+    alignItems: 'stretch',
+    justifyContent: 'center',
   },
   summaryCard: {
     flex: 1,
-    padding: 16,
+    minWidth: 160,
+    marginBottom: Platform.OS === 'web' ? 0 : 12,
     borderRadius: 16,
     ...Platform.select({
       ios: {
@@ -467,8 +486,10 @@ const styles = StyleSheet.create({
   },
   transactionsList: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 20,
     paddingTop: 12,
+    width: '100%',
+    alignSelf: 'center',
   },
   transactionItem: {
     flexDirection: 'row',
@@ -478,6 +499,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
+    width: '100%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -573,5 +595,41 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
+  },
+  transactionSummaryContainer: {
+    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 24,
+    marginTop: 12,
+    marginBottom: 24,
+    width: '100%',
+  },
+  transactionSummaryCard: {
+    flex: 1,
+    maxWidth: Platform.OS === 'web' ? 240 : 400,
+    width: Platform.OS === 'web' ? 'auto' : '100%',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: Platform.OS === 'web' ? 0 : 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+    }),
   },
 });
