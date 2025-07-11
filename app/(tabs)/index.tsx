@@ -89,7 +89,7 @@ export default function DashboardScreen() {
   const secondaryColor = appSettings?.['customized-app-secondary-color'] || '#3f37c9';
 
   // Get menu display settings
-  const displayMenuItems = appSettings?.['customized-app-displayable-menu-items'] || {};
+  const displayMenuItems = ((appSettings as any)?.['customized-app-displayable-menu-items'] as Record<string, boolean | undefined>) || {};
 
   const fetchWallets = async () => {
     try {
@@ -413,13 +413,15 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* <SideMenu 
-        visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
-        user={user}
-        kycStatus={kycStatus}
-      /> */}
-      
+      {/* SideMenu for mobile (always rendered, toggled by menuVisible) */}
+      {Platform.OS !== 'web' && (
+        <SideMenu 
+          visible={menuVisible} 
+          onClose={() => setMenuVisible(false)} 
+          user={user}
+          kycStatus={kycStatus}
+        />
+      )}
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
