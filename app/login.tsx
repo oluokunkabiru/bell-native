@@ -18,8 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -136,9 +136,8 @@ export default function LoginScreen() {
                 </View>
               )} */}
 
-
-
               {(organization?.public_logo_url || organization?.customized_app_settings?.['customized-app-logo-url']) && (
+              
               <View style={styles.logoContainer}>
                 <Image
                   source={{
@@ -154,7 +153,7 @@ export default function LoginScreen() {
 
               <Text style={styles.title}>{appName}</Text>
               <Text style={styles.subtitle}>
-                {organization?.description || 'Sign in to your account'}
+               {organization?.description || 'Sign in to your account'}
               </Text>
             </View>
 
@@ -226,19 +225,19 @@ export default function LoginScreen() {
             </View>
 
             {/* Footer */}
-            <View style={styles.footer}>
+            {/* <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/register')}>
                 <Text style={[styles.signUpText, { color: '#ffffff' }]}>Sign Up</Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Org info */}
             {organization && (
               <View style={styles.orgContainer}>
                 <Text style={styles.orgTitle}>{organization.full_name}</Text>
-                <Text style={styles.orgContact}>📞 {organization.official_contact_phone}</Text>
-                <Text style={styles.orgEmail}>✉️ {organization.official_email}</Text>
+                {/* <Text style={styles.orgContact}>📞 {organization.official_contact_phone}</Text> */}
+                {/* <Text style={styles.orgEmail}>✉️ {organization.official_email}</Text> */}
               </View>
             )}
           </ScrollView>

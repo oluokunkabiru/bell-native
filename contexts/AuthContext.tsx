@@ -5,6 +5,7 @@ import { UserProfile, Organization, AppSettings } from '@/types/api';
 import { useIdleTimer } from '@/hooks/useIdleTimer';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
+import { Platform } from 'react-native';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -61,15 +62,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = !!user;
 
   // Auto-logout after 5 minutes of inactivity
-  const { resetTimer } = useIdleTimer({
-    timeout: 5 * 60 * 1000, // 5 minutes
-    onIdle: () => {
-      if (isAuthenticated) {
-        logout();
-      }
-    },
-    enabled: isAuthenticated,
-  });
+  // const { resetTimer } = useIdleTimer({
+  //   timeout: 5 * 60 * 1000, // 5 minutes
+  //   onIdle: () => {
+  //     if (isAuthenticated) {
+  //       logout();
+  //     }
+  //   },
+  //   enabled: isAuthenticated,
+  // });
+  
+
+
+
+  const { resetTimer } = Platform.OS === 'web'
+  ? useIdleTimer({
+      timeout: 5 * 60 * 1000,
+      onIdle: () => {
+        if (isAuthenticated) {
+          logout();
+        }
+      },
+      enabled: isAuthenticated,
+    })
+  : { resetTimer: () => {} };
 
   const loadStoredData = async (): Promise<{ org: Organization | null; settings: AppSettings | null; balance: number }> => {
     try {
@@ -171,8 +187,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     
 
-    // Fetch organization using identifier (currently hardcoded to 'signature')
-    const orgResponse = await apiService.getOrganization(currentIdentifier);
+    // Fetch organization using identifier (currently hardcoded to 'signature')currentIdentifier
+    const orgResponse = await apiService.getOrganization("mybeller");
 
     if (orgResponse.status && orgResponse.data) {
       setOrganization(orgResponse.data);

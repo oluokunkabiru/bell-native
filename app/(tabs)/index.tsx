@@ -40,6 +40,7 @@ import {
   Share2,
   Menu,
   Bitcoin,
+  WalletCards,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -394,7 +395,7 @@ export default function DashboardScreen() {
       title: 'Available Balance',
       value: `₦${wallets.reduce((sum, w) => sum + parseFloat(w.balance || '0'), 0).toLocaleString()}`,
       description: 'Current wallet balance',
-      icon: DollarSign,
+      icon: WalletCards,
       color: '#f59e0b',
       gradient: ['#f59e0b', '#d97706']
     }
