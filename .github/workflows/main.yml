@@ -4,59 +4,60 @@ name: Deploy to Server via SSH
 on:
   push:
     branches:
-      - master
+      - master  # or main
 
 jobs:
   deploy:
     name: Build & restart on server
     runs-on: ubuntu-latest
-
+    
     steps:
       # 1) Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # 2) Start SSH agent & add your private key
+      
+      # 2) Deploy using SSH (Method 1: Using ssh-agent)
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      # 3) SSH into your server and run the deploy script
-      - name: Pull, install, build, restart
+      
+      - name: Add server to known hosts
         run: |
-          # Prepare SSH directory and known_hosts
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/demo_rsa
-          chmod 600 ~/.ssh/demo_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-          # Connect and deploy
-          ssh -i ~/.ssh/demo_rsa -o StrictHostKeyChecking=no \
+      
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
               set -e
               echo "→ Switching to project dir"
               cd ${{ secrets.SSH_DIR }}
-
+              
               echo "→ Resetting local changes"
               git reset --hard
-
+              
               echo "→ Pulling latest code"
-              git pull origin ${{ secrets.SSH_BRANCH }}
-
+              git pull origin ${{ secrets.SSH_BRANCH || 'master' }}
+              
               echo "→ Installing dependencies"
               if [ -f package-lock.json ]; then
                 npm ci --silent
+              elif [ -f yarn.lock ]; then
+                yarn install --frozen-lockfile --silent
               else
                 npm install --silent
               fi
-
+              
               echo "→ Building project"
               npm run build
-
+              
               echo "→ Restarting app with PM2"
-              pm2 reload ecosystem.config.js --only app \
-                || pm2 start ecosystem.config.js --only app
-
+              if pm2 list | grep -q "app"; then
+                pm2 reload ecosystem.config.js --only app
+              else
+                pm2 start ecosystem.config.js --only app
+              fi
+              
               echo "✅ Deploy complete"
           EOF
