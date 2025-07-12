@@ -830,15 +830,10 @@ const styles = StyleSheet.create({
 
     walletsOuter: {
     alignItems: 'center',    // center *children* horizontally
-    justifyContent: 'center',// center vertically if there’s extra space
+    justifyContent: 'center',// center vertically if there's extra space
     width: '100%',           // take full row
     paddingVertical: 10,
   },
-  // existing:
-  walletsSlider: {
-    paddingHorizontal: 20,
-  },
-
 
   container: {
     flex: 1,
@@ -1486,11 +1481,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     //  alignItems: 'center'
   },
-  // walletsSlider: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   gap: 16,
-  // },
   walletBlock: {
     width: 220,
     padding: 20,
@@ -1533,5 +1523,14 @@ const styles = StyleSheet.create({
   },
   walletsScrollView: {
     width: '100%',
+  },
+  walletsSlider: {
+    paddingHorizontal: 20,
+    ...Platform.select({
+      web: {
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    }),
   },
 });
