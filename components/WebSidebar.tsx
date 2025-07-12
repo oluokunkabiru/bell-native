@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Chrome as Dashboard, 
@@ -31,9 +31,12 @@ interface WebSidebarProps {
 export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
   const { appSettings, user } = useAuth();
   const pathname = usePathname();
+  const { width: windowWidth } = useWindowDimensions();
   // Sidebar toggle suppose to go here
   const [collapsed, setCollapsed] = useState(true); // Default to collapsed suppose to set to false
 
+  // Determine if we're on mobile web (width < 768px)
+  const isMobileWeb = Platform.OS === 'web' && windowWidth < 768;
   
   // Only show on web platform
   if (Platform.OS !== 'web') {
@@ -87,8 +90,8 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
 
 
 
-  // Get menu display settings
-  const displayMenuItems = appSettings?.['customized-app-displayable-menu-items'] || {};
+  // Get menu display settings - properly typed
+  const displayMenuItems = (appSettings as any)?.['customized-app-displayable-menu-items'] as Record<string, boolean | undefined> || {};
   
   // Get colors from API settings with fallbacks
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#4361ee';
@@ -112,105 +115,105 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
     {
       title: 'Dashboard',
       icon: Dashboard,
-      route: '/(tabs)',
+      route: '/(tabs)' as const,
       active: pathname === '/(tabs)' || pathname === '/(tabs)/index',
       key: 'display-dashboard-menu',
     },
     {
       title: 'Send Money',
       icon: Send,
-      route: '/bank-transfer',
+      route: '/bank-transfer' as const,
       active: pathname === '/bank-transfer',
       key: 'display-bank-transfer-menu',
     },
     {
       title: 'Crypto Transfer',
       icon: Bitcoin, // You can replace with a crypto icon if available
-      route: '/crypto-transfer',
+      route: '/crypto-transfer' as const,
       active: pathname === '/crypto-transfer',
       key: 'display-crypto-transfer-menu',
     },
     {
       title: 'Wallet Transfer',
       icon: Wallet,
-      route: '/wallet-transfer',
+      route: '/wallet-transfer' as const,
       active: pathname === '/wallet-transfer',
       key: 'display-wallet-transfer-menu',
     },
     {
       title: 'Buy Airtime',
       icon: Smartphone,
-      route: '/airtime',
+      route: '/airtime' as const,
       active: pathname === '/airtime',
       key: 'display-airtime-menu',
     },
     {
       title: 'Buy Data',
       icon: Wifi,
-      route: '/data-bundle',
+      route: '/data-bundle' as const,
       active: pathname === '/data-bundle',
       key: 'display-data-menu',
     },
     {
       title: 'Electricity',
       icon: Zap,
-      route: '/electricity',
+      route: '/electricity' as const,
       active: pathname === '/electricity',
       key: 'display-electricity-menu',
     },
     {
       title: 'Cable TV',
       icon: Tv,
-      route: '/cable-tv',
+      route: '/cable-tv' as const,
       active: pathname === '/cable-tv',
       key: 'display-cable-tv-menu',
     },
     {
       title: 'Fixed Deposit',
       icon: PiggyBank,
-      route: '/fixed-deposits',
+      route: '/fixed-deposits' as const,
       active: pathname === '/fixed-deposits',
       key: 'display-fixed-deposit-menu',
     },
     {
       title: 'Cards',
       icon: CreditCard,
-      route: '/cards',
+      route: '/cards' as const,
       active: pathname === '/cards',
       key: 'display-virtual-card-menu',
     },
     {
       title: 'Transactions',
       icon: CreditCard,
-      route: '/(tabs)/transactions',
+      route: '/(tabs)/transactions' as const,
       active: pathname === '/(tabs)/transactions',
       key: 'display-transactions-menu',
     },
     {
       title: 'Analytics',
       icon: Analytics,
-      route: '/(tabs)/analytics',
+      route: '/(tabs)/analytics' as const,
       active: pathname === '/(tabs)/analytics',
       key: 'display-analytics-menu',
     },
     {
       title: 'Profile',
       icon: User,
-      route: '/(tabs)/profile',
+      route: '/(tabs)/profile' as const,
       active: pathname === '/(tabs)/profile',
       key: 'display-profile-menu',
     },
     {
       title: 'KYC',
       icon: Shield,
-      route: '/kyc-verification',
+      route: '/kyc-verification' as const,
       active: pathname === '/kyc-verification',
       key: 'display-kyc-menu',
     },
     {
       title: 'Settings',
       icon: Settings,
-      route: '/(tabs)/settings',
+      route: '/(tabs)/settings' as const,
       active: pathname === '/(tabs)/settings',
       key: 'display-settings-menu',
     },
@@ -223,13 +226,15 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
 
   const handleNavigation = (route: string) => {
     if (route === '#') return;
-    router.push(route);
+    router.push(route as any);
   };
 
   return (
     <View style={[
       styles.container, 
-      collapsed && styles.collapsedContainer
+      collapsed && styles.collapsedContainer,
+      isMobileWeb && styles.mobileContainer,
+      isMobileWeb && collapsed && styles.mobileCollapsedContainer
     ]}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -265,40 +270,47 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
           </View>
         )}
         
-        <View style={styles.menuItems}>
-          {filteredMenuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.menuItem,
-                item.active && styles.activeMenuItem,
-                collapsed && styles.collapsedMenuItem,
-              ]}
-              onPress={() => handleNavigation(item.route)}
-            >
-              <View style={[
-                styles.menuItemContent,
-                collapsed && styles.collapsedMenuItemContent
-              ]}>
-                <item.icon 
-                  size={20} 
-                  color={item.active ? '#FFFFFF' : '#94a3b8'} 
-                />
-                {/* Only show text when not collapsed */}
-                {!collapsed && (
-                  <Text 
-                    style={[
-                      styles.menuItemText,
-                      item.active && styles.activeMenuItemText,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <ScrollView 
+          style={styles.menuItemsContainer}
+          contentContainerStyle={styles.menuItemsContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.menuItems}>
+            {filteredMenuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.menuItem,
+                  item.active && styles.activeMenuItem,
+                  collapsed && styles.collapsedMenuItem,
+                ]}
+                onPress={() => handleNavigation(item.route)}
+              >
+                <View style={[
+                  styles.menuItemContent,
+                  collapsed && styles.collapsedMenuItemContent
+                ]}>
+                  <item.icon 
+                    size={20} 
+                    color={item.active ? '#FFFFFF' : '#94a3b8'} 
+                  />
+                  {/* Only show text when not collapsed */}
+                  {!collapsed && (
+                    <Text 
+                      style={[
+                        styles.menuItemText,
+                        item.active && styles.activeMenuItemText,
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+        
         <TouchableOpacity 
           style={[
             styles.logoutButton,
@@ -328,6 +340,18 @@ const styles = StyleSheet.create({
     // Removed transition property (not supported)
   },
   collapsedContainer: {
+    width: 60,
+  },
+  mobileContainer: {
+    width: '100%',
+    maxWidth: 300,
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  mobileCollapsedContainer: {
     width: 60,
   },
   safeArea: {
@@ -392,10 +416,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#CCCCCC',
   },
-  menuItems: {
+  menuItemsContainer: {
     flex: 1,
+  },
+  menuItemsContent: {
+    flexGrow: 1,
+  },
+  menuItems: {
     paddingVertical: 8,
-    // Removed overflow: 'auto' (not supported)
   },
   menuItem: {
     flexDirection: 'row',

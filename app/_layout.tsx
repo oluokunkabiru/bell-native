@@ -6,7 +6,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { WebSidebar } from '@/components/WebSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -15,8 +15,12 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
   const { isAuthenticated, logout } = useAuth();
+  const { width: windowWidth } = useWindowDimensions();
   // Match the default collapsed state in WebSidebar (true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
+  // Determine if we're on mobile web (width < 768px)
+  const isMobileWeb = Platform.OS === 'web' && windowWidth < 768;
 
   const handleLogout = async () => {
     try {
@@ -38,7 +42,9 @@ function RootLayoutContent() {
       )}
       <View style={[
         styles.content, 
-        isAuthenticated && Platform.OS === 'web' && (sidebarCollapsed ? styles.contentWithCollapsedSidebar : styles.contentWithSidebar)
+        isAuthenticated && Platform.OS === 'web' && !isMobileWeb && (
+          sidebarCollapsed ? styles.contentWithCollapsedSidebar : styles.contentWithSidebar
+        )
       ]}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" options={{ headerShown: false }} />

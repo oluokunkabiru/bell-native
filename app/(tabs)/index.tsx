@@ -487,73 +487,39 @@ export default function DashboardScreen() {
         }
       >
         {/* Wallets Slider/Blocks */}
-        {/* <View style={[styles.walletsSliderContainer, { alignItems: 'center' }]}> 
-          <View style={{ alignSelf: 'center', width: '100%' }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.walletsSlider}
-            >
-              {wallets.map((w, idx) => (
-                <View key={w?.id || idx} style={styles.walletBlock}>
-                  <Text style={styles.walletCurrencyIcon}>
-                    {getCurrencyIcon(w?.currency?.code || '')}
-                  </Text>
-                  <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
-                  <Text style={styles.walletBalance}>
-                    {(w?.currency?.symbol || '₦')}{parseFloat(w?.balance || '0').toLocaleString()}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
-                    <TouchableOpacity
-                      style={{ marginLeft: 8 }}
-                      onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
-                    >
-                      <Copy size={18} color="#94a3b8" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{w.wallet_number?.slice(-10)}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View> */}
-
-
-
-        {/* Wallets Slider/Blocks */}
-<View style={styles.walletsOuter}>
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.walletsSlider}
-  >
-    {wallets.map((w, idx) => (
-      <View key={w?.id || idx} style={styles.walletBlock}>
-        <Text style={styles.walletCurrencyIcon}>
-          {getCurrencyIcon(w?.currency?.code || '')}
-        </Text>
-        <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
-        <Text style={styles.walletBalance}>
-          {(w?.currency?.symbol || '₦')}
-          {parseFloat(w?.balance || '0').toLocaleString()}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-          <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
-          <TouchableOpacity
-            style={{ marginLeft: 8 }}
-            onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
+        <View style={styles.walletsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.walletsSlider}
+            style={styles.walletsScrollView}
           >
-            <Copy size={18} color="#94a3b8" />
-          </TouchableOpacity>
+            {wallets.map((w, idx) => (
+              <View key={w?.id || idx} style={styles.walletBlock}>
+                <Text style={styles.walletCurrencyIcon}>
+                  {getCurrencyIcon(w?.currency?.code || '')}
+                </Text>
+                <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
+                <Text style={styles.walletBalance}>
+                  {(w?.currency?.symbol || '₦')}
+                  {parseFloat(w?.balance || '0').toLocaleString()}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
+                  <TouchableOpacity
+                    style={{ marginLeft: 8 }}
+                    onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
+                  >
+                    <Copy size={18} color="#94a3b8" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                  {w.wallet_number?.slice(-10)}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
-        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
-          {w.wallet_number?.slice(-10)}
-        </Text>
-      </View>
-    ))}
-  </ScrollView>
-</View>
 
 
         {/* Quick Actions */}
@@ -586,10 +552,10 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>Financial Insights</Text>
             <TouchableOpacity 
               style={styles.viewAllButton}
-              onPress={() => router.push('/(tabs)/analytics')}
+              // onPress={() => router.push('/(tabs)/analytics')}
             >
-              <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
-              <ChevronRight size={16} color={primaryColor} />
+              {/* <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
+              <ChevronRight size={16} color={primaryColor} /> */}
             </TouchableOpacity>
           </View>
 
@@ -1560,5 +1526,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94a3b8',
     fontFamily: 'Poppins-Regular',
+  },
+  walletsContainer: {
+    width: '100%',
+    paddingVertical: 10,
+  },
+  walletsScrollView: {
+    width: '100%',
   },
 });
