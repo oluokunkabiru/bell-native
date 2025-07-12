@@ -1,206 +1,66 @@
-# .github/workflows/deploy.yml
 name: Deploy to Server via SSH (robust)
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1) Checkout source
-      - uses: actions/checkout@v4
-      
-      # 2) Debug logging - check secrets (without exposing sensitive data)
-      - name: Debug connection parameters
-        run: |
-          echo "::group::Connection Debug Info"
-          echo "SSH_HOST length: ${#SSH_HOST}"
-          echo "SSH_USER length: ${#SSH_USER}"
-          echo "SSH_KEY length: ${#SSH_KEY}"
-          echo "SSH_DIR length: ${#SSH_DIR}"
-          echo "SSH_BRANCH length: ${#SSH_BRANCH}"
-          
-          # Show first/last chars of non-sensitive values (help identify issues)
-          echo "SSH_HOST starts with: ${SSH_HOST:0:3}..."
-          echo "SSH_USER starts with: ${SSH_USER:0:2}..."
-          echo "SSH_DIR starts with: ${SSH_DIR:0:5}..."
-          echo "SSH_BRANCH: $SSH_BRANCH"
-          
-          # Check if values are empty
-          [ -z "$SSH_HOST" ] && echo "❌ SSH_HOST is empty!" || echo "✅ SSH_HOST is set"
-          [ -z "$SSH_USER" ] && echo "❌ SSH_USER is empty!" || echo "✅ SSH_USER is set"
-          [ -z "$SSH_KEY" ] && echo "❌ SSH_KEY is empty!" || echo "✅ SSH_KEY is set"
-          [ -z "$SSH_DIR" ] && echo "❌ SSH_DIR is empty!" || echo "✅ SSH_DIR is set"
-          [ -z "$SSH_BRANCH" ] && echo "❌ SSH_BRANCH is empty!" || echo "✅ SSH_BRANCH is set"
-          echo "::endgroup::"
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-          SSH_DIR: ${{ secrets.SSH_DIR }}
-          SSH_BRANCH: ${{ secrets.SSH_BRANCH }}
-      
-      # 3) Start ssh-agent & add key
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-      
-      # 4) Test SSH key format
-      - name: Validate SSH key format
-        run: |
-          echo "::group::SSH Key Validation"
-          # Check if key starts with proper format
-          if echo "$SSH_KEY" | grep -q "BEGIN.*PRIVATE KEY"; then
-            echo "✅ SSH key appears to have proper format"
-          else
-            echo "❌ SSH key doesn't appear to have proper format"
-            echo "Key should start with '-----BEGIN [TYPE] PRIVATE KEY-----'"
-          fi
-          
-          # Check key type
-          if echo "$SSH_KEY" | grep -q "BEGIN RSA PRIVATE KEY"; then
-            echo "✅ RSA private key detected"
-          elif echo "$SSH_KEY" | grep -q "BEGIN OPENSSH PRIVATE KEY"; then
-            echo "✅ OpenSSH private key detected"
-          elif echo "$SSH_KEY" | grep -q "BEGIN EC PRIVATE KEY"; then
-            echo "✅ EC private key detected"
-          else
-            echo "⚠️ Unknown key type or format issue"
-          fi
-          echo "::endgroup::"
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-      
-      # 5) Test host connectivity
-      - name: Test host connectivity
-        run: |
-          echo "::group::Host Connectivity Test"
-          echo "Testing connection to: $SSH_HOST"
-          
-          # Test if host is reachable
-          if ping -c 3 "$SSH_HOST" > /dev/null 2>&1; then
-            echo "✅ Host is reachable via ping"
-          else
-            echo "❌ Host is NOT reachable via ping"
-          fi
-          
-          # Test if SSH port is open
-          if timeout 10 bash -c "echo >/dev/tcp/$SSH_HOST/22" 2>/dev/null; then
-            echo "✅ SSH port (22) is open"
-          else
-            echo "❌ SSH port (22) is NOT accessible"
-          fi
-          echo "::endgroup::"
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-      
-      # 6) Add server fingerprint
+          ssh-private-key: ${{ secrets.SERVER_KEY }}
+
       - name: Add server to known_hosts
+        env:
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
         run: |
-          echo "::group::SSH Keyscan"
           mkdir -p ~/.ssh
-          echo "Scanning SSH host: $SSH_HOST"
-          
-          # Try to fetch the host key with timeout
+          echo "# Try to fetch the host key with timeout"
           if ssh-keyscan -T 30 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
             echo "✅ Successfully added host key to known_hosts"
           else
             echo "❌ Failed to get host key via ssh-keyscan"
           fi
-          
           echo "Current known_hosts content:"
-          cat ~/.ssh/known_hosts || echo "No known_hosts file"
-          echo "::endgroup::"
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-      
-      # 7) Test SSH connection
+          cat ~/.ssh/known_hosts
+
       - name: Test SSH connection
+        env:
+          SSH_USER: ${{ secrets.SERVER_USER }}
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
         run: |
-          echo "::group::SSH Connection Test"
-          echo "Testing SSH connection to: $SSH_USER@$SSH_HOST"
-          
-          # Test basic SSH connection
+          echo "# Test basic SSH connection"
           if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes "$SSH_USER@$SSH_HOST" "echo 'SSH connection successful'"; then
             echo "✅ SSH connection successful"
           else
             echo "❌ SSH connection failed"
             echo "This could be due to:"
             echo "- Incorrect SSH key"
-            echo "- Wrong username"
-            echo "- Firewall blocking connection"
-            echo "- SSH service not running"
+            exit 1
           fi
-          echo "::endgroup::"
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-      
-      # 8) Deploy
+
       - name: Deploy to server
+        env:
+          SSH_USER: ${{ secrets.SERVER_USER }}
+          SSH_HOST: ${{ secrets.SERVER_HOST }}
         run: |
-          echo "::group::Deployment"
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 $SSH_USER@$SSH_HOST"
-          
           echo "### Connecting to server ###"
-          echo "Command: $SSH_CMD"
-          
-          $SSH_CMD << 'EOF'
-            set -euo pipefail
-            
-            echo "=== DEPLOYMENT START ==="
-            echo "Remote host: $(hostname)"
-            echo "Current user: $(whoami)"
-            echo "Current directory: $(pwd)"
-            echo "Target directory: ${{ secrets.SSH_DIR }}"
-            
-            # Check if directory exists
-            if [ ! -d "${{ secrets.SSH_DIR }}" ]; then
-              echo "❌ Target directory does not exist: ${{ secrets.SSH_DIR }}"
-              exit 1
-            fi
-            
-            cd "${{ secrets.SSH_DIR }}"
-            echo "✅ Changed to: $(pwd)"
-            
-            # Check if it's a git repository
-            if [ ! -d ".git" ]; then
-              echo "❌ Not a git repository"
-              exit 1
-            fi
-            
-            echo "→ Git reset & pull"
-            git reset --hard
-            git pull origin "${{ secrets.SSH_BRANCH }}"
-            
-            echo "→ Installing dependencies"
-            if [ -f package-lock.json ]; then
-              npm ci
-            elif [ -f yarn.lock ]; then
-              yarn install --frozen-lockfile
-            else
-              npm install
-            fi
-            
-            echo "→ Building project"
-            npm run build
-            
-            echo "→ Restarting with PM2"
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$SSH_USER@$SSH_HOST" "
+            cd /path/to/app || { echo '❌ Target directory does not exist'; exit 1; }
+            [ -d .git ] || { echo '❌ Not a git repository'; exit 1; }
+            echo '→ Restarting with PM2'
             if pm2 reload ecosystem.config.js --only app; then
-              echo "✅ PM2 reload successful"
+              echo '✅ PM2 reload successful'
             else
-              echo "⚠️ PM2 reload failed, trying start..."
+              echo '⚠️ PM2 reload failed, trying start...'
               pm2 start ecosystem.config.js --only app
             fi
-            
-            echo "✅ Deploy completed at $(date)"
-            echo "=== DEPLOYMENT END ==="
-          EOF
-          echo "::endgroup::"
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
+          "
