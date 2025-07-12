@@ -60,17 +60,16 @@ jobs:
           [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
           rsync -avz --delete -e "$RSYNC_SSH" ./dist/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
 
-
-      # 4. Restart (or start) PM2 on server
-      - name: Restart PM2
-        run: |
-          SSH_CMD="ssh -o StrictHostKeyChecking=no"
-          [ -n "$SSH_PORT" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          $SSH_CMD "$SSH_USER@$SSH_HOST" << 'EOF'
-            set -e
-            cd "$SSH_DIR"
-            echo "Reloading PM2"
-            pm2 reload ecosystem.config.js --only app \
-              || pm2 start ecosystem.config.js --only app
-            pm2 save
-          EOF
+      # # 4. Restart (or start) PM2 on server
+      # - name: Restart PM2
+      #   run: |
+      #     SSH_CMD="ssh -o StrictHostKeyChecking=no"
+      #     [ -n "$SSH_PORT" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
+      #     $SSH_CMD "$SSH_USER@$SSH_HOST" << 'EOF'
+      #       set -e
+      #       cd "$SSH_DIR"
+      #       echo "Reloading PM2"
+      #       pm2 reload ecosystem.config.js --only app \
+      #         || pm2 start ecosystem.config.js --only app
+      #       pm2 save
+      #     EOF
