@@ -1,0 +1,75 @@
+# .github/workflows/deploy.yml
+name: Deploy from Variables
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Expose variables to every step
+    env:
+      # SSH_KEY_PLAIN: ${{ vars.V_KEY }}
+      # SSH_USER:      ${{ vars.V_USER }}
+      # SSH_HOST:      ${{ vars.V_HOST }}
+      # SSH_DIR:       ${{ vars.V_DIR }}
+      # SSH_BRANCH:    ${{ vars.V_BRANCH }}
+      # SSH_PORT:      ${{ vars.V_PORT }}   # Optional - leave empty if using default port 22
+      SSH_KEY_PLAIN: ${{ secrets.SSH_KEY }}
+      SSH_USER:      ${{ secrets.SSH_USER }}
+      
+      SSH_HOST:      ${{ secrets.SSH_HOST }}
+      SSH_DIR:       ${{ secrets.SSH_DIR }}
+      SSH_BRANCH:    ${{ secrets.SSH_BRANCH  }}
+      SSH_PORT:      ${{ vars.V_PORT }}   
+    
+    steps:
+      # 0. Checkout & Node
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 1. Install & build locally
+      - name: Install deps & build
+        run: |
+          npm ci
+          npm run build:web          # outputs ./web-build (Expo default)
+
+      # 2. Prepare SSH
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+          # Optional known_hosts (skip errors during debug)
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts || true
+
+      # 3. Rsync build folder to server
+      - name: Upload build to server
+        run: |
+          RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
+          [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
+          rsync -avz --delete -e "$RSYNC_SSH" ./dist/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
+
+      # # 4. Restart (or start) PM2 on server
+      # - name: Restart PM2
+      #   run: |
+      #     SSH_CMD="ssh -o StrictHostKeyChecking=no"
+      #     [ -n "$SSH_PORT" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
+      #     $SSH_CMD "$SSH_USER@$SSH_HOST" << 'EOF'
+      #       set -e
+      #       cd "$SSH_DIR"
+      #       echo "Reloading PM2"
+      #       pm2 reload ecosystem.config.js --only app \
+      #         || pm2 start ecosystem.config.js --only app
+      #       pm2 save
+      #     EOF
