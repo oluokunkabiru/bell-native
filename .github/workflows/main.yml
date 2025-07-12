@@ -12,12 +12,19 @@ jobs:
     
     # Expose variables to every step
     env:
-      SSH_KEY_PLAIN: ${{ vars.V_KEY }}
-      SSH_USER:      ${{ vars.V_USER }}
-      SSH_HOST:      ${{ vars.V_HOST }}
-      SSH_DIR:       ${{ vars.V_DIR }}
-      SSH_BRANCH:    ${{ vars.V_BRANCH }}
-      SSH_PORT:      ${{ vars.V_PORT }}   # Optional - leave empty if using default port 22
+      # SSH_KEY_PLAIN: ${{ vars.V_KEY }}
+      # SSH_USER:      ${{ vars.V_USER }}
+      # SSH_HOST:      ${{ vars.V_HOST }}
+      # SSH_DIR:       ${{ vars.V_DIR }}
+      # SSH_BRANCH:    ${{ vars.V_BRANCH }}
+      # SSH_PORT:      ${{ vars.V_PORT }}   # Optional - leave empty if using default port 22
+
+      SSH_KEY_PLAIN: ${{ secrets.SSH_KEY }}
+      SSH_USER:      ${{ secrets.SSH_USER }}
+      SSH_HOST:      ${{ secrets.SSH_HOST }}
+      SSH_DIR:       ${{ secrets.SSH_DIR }}
+      SSH_BRANCH:    ${{ secrets.SSH_BRANCH  }}
+      SSH_PORT:      ${{ vars.V_PORT }}   
     
     steps:
       - name: Checkout code
