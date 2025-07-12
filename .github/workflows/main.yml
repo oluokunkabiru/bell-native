@@ -1,10 +1,10 @@
 # .github/workflows/deploy.yml
-name: Deploy to Server via SSH – verbose
+name: Deploy to Server via SSH (verbose)
 
 on:
   push:
     branches:
-      - master   # change if you deploy from a different branch
+      - master     # change if you deploy from another branch
 
 jobs:
   deploy:
@@ -13,7 +13,7 @@ jobs:
 
     steps:
       # -----------------------------------------------------------
-      # 1. Checkout the code
+      # 1. Checkout the repository
       # -----------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,12 +27,12 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
       # -----------------------------------------------------------
-      # 3. Add host fingerprint (best‑practice)
+      # 3. Add host fingerprint to known_hosts
       # -----------------------------------------------------------
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts || true
           echo "Known hosts now contains:"
           cat ~/.ssh/known_hosts
 
@@ -41,10 +41,9 @@ jobs:
       # -----------------------------------------------------------
       - name: Deploy to server
         run: |
-          echo "###  SSH connection debug (verbose mode)  ###"
-          ssh -v -o StrictHostKeyChecking=no \
+          echo "### SSH connection debug (verbose mode) ###"
+          ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-                # Fail fast & echo each command
                 set -exuo pipefail
 
                 echo "=== Connected to $(hostname) ==="
@@ -52,7 +51,7 @@ jobs:
                 cd ${{ secrets.SSH_DIR }}
 
                 echo "→ Current commit:"
-                git --no-pager log -1 --oneline
+                git --no-pager log -1 --oneline || true
 
                 echo "→ Resetting local changes"
                 git reset --hard
@@ -82,5 +81,5 @@ jobs:
                   pm2 start ecosystem.config.js --only app
                 fi
 
-                echo "✅  Deploy complete on $(date)"
+                echo "✅ Deploy complete on $(date)"
           EOF
