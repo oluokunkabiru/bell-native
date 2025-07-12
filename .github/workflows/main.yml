@@ -12,47 +12,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Check out repo so other actions (if any) can read it
+      # 1) Checkout repository
       - name: Checkout repository
-        # uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       # 2) Start SSH agent & add your private key
       - name: Set up SSH key
-        # uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
       # 3) SSH into your server and run the deploy script
       - name: Pull, install, build, restart
         run: |
-          install -m 600 -D /home/gobeller/.ssh/demo_rsa
+          # Prepare SSH directory and known_hosts
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/demo_rsa
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-          name: connect and pull
-          ssh  ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e                       # stop on first error
-            echo "→ Switching to project dir"
-            cd ${{ secrets.SSH_DIR }}
+          chmod 600 ~/.ssh/demo_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-            echo "→ Resetting local changes (optional)"
-            git reset --hard
+          # Connect and deploy
+          ssh -i ~/.ssh/demo_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+              set -e
+              echo "→ Switching to project dir"
+              cd ${{ secrets.SSH_DIR }}
 
-            echo "→ Pulling latest code"
-            git pull origin ${{ secrets.SSH_BRANCH }}
+              echo "→ Resetting local changes"
+              git reset --hard
 
-            echo "→ Installing dependencies"
-            if [ -f package-lock.json ]; then
-              npm ci --silent            # clean install for CI
-            else
-              npm install --silent
-            fi
+              echo "→ Pulling latest code"
+              git pull origin ${{ secrets.SSH_BRANCH }}
 
-            echo "→ Building project"
-            npm run build
+              echo "→ Installing dependencies"
+              if [ -f package-lock.json ]; then
+                npm ci --silent
+              else
+                npm install --silent
+              fi
 
-            echo "→ Restarting app with PM2"
-            # Adjust the name or ecosystem file as needed
-            pm2 reload ecosystem.config.js --only app || pm2 start ecosystem.config.js --only app
+              echo "→ Building project"
+              npm run build
 
-            echo "✅ Deploy complete"
+              echo "→ Restarting app with PM2"
+              pm2 reload ecosystem.config.js --only app \
+                || pm2 start ecosystem.config.js --only app
+
+              echo "✅ Deploy complete"
           EOF
