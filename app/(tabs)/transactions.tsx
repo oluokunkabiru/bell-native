@@ -368,6 +368,8 @@ export default function TransactionsScreen() {
                   </View>
                 )}
               </>
+
+              
             ) : (
               <View style={styles.emptyState}>
                 <AlertCircle size={64} color="#94a3b8" />
