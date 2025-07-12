@@ -189,13 +189,13 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       active: pathname === '/(tabs)/transactions',
       key: 'display-transactions-menu',
     },
-    {
-      title: 'Analytics',
-      icon: Analytics,
-      route: '/(tabs)/analytics' as const,
-      active: pathname === '/(tabs)/analytics',
-      key: 'display-analytics-menu',
-    },
+    // {
+    //   title: 'Analytics',
+    //   icon: Analytics,
+    //   route: '/(tabs)/analytics' as const,
+    //   active: pathname === '/(tabs)/analytics',
+    //   key: 'display-analytics-menu',
+    // },
     {
       title: 'Profile',
       icon: User,

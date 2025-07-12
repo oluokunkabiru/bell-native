@@ -52,6 +52,7 @@ interface Transaction {
 export default function TransactionsScreen() {
   /* -------- responsive helpers -------- */
   const { width } = useWindowDimensions();
+  const isMobileWeb = Platform.OS === 'web' && width < 768;
   const gutter =
     Platform.OS === 'web'
       ? width < 961
@@ -159,7 +160,31 @@ export default function TransactionsScreen() {
   /* ------------------------------------------------------------------ */
   return (
     <SafeAreaView style={[styles.container, { paddingRight: gutter }]}>
-      <ScrollView contentContainerStyle={styles.screenInner} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.screenInner} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={primaryColor}
+            colors={[primaryColor]}
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          if (
+            layoutMeasurement.height + contentOffset.y >=
+              contentSize.height - 20 &&
+            hasMorePages &&
+            !isLoadingMore
+          ) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
+      >
         {/* ---------------- HEADER ---------------- */}
         <View style={[styles.header, { maxWidth: MAX_W }]}>
           <Text style={styles.headerTitle}>Transactions</Text>
@@ -237,13 +262,26 @@ export default function TransactionsScreen() {
 
         {/* ---------------- SUMMARY ---------------- */}
         <View style={[styles.summaryContainer, { maxWidth: MAX_W }]}>
-          <View style={[styles.summaryCard, { backgroundColor: '#10b98120' }]}>
+          <View style={[
+            styles.summaryCard, 
+            { 
+              backgroundColor: '#10b98120',
+              flex: isMobileWeb ? 1 : undefined,
+              marginBottom: isMobileWeb ? 12 : 0
+            }
+          ]}>
             <Text style={styles.summaryLabel}>Total In</Text>
             <Text style={[styles.summaryAmount, { color: '#10b981' }]}>
               ₦{totalIn.toLocaleString()}
             </Text>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: '#ef444420' }]}>
+          <View style={[
+            styles.summaryCard, 
+            { 
+              backgroundColor: '#ef444420',
+              flex: isMobileWeb ? 1 : undefined
+            }
+          ]}>
             <Text style={styles.summaryLabel}>Total Out</Text>
             <Text style={[styles.summaryAmount, { color: '#ef4444' }]}>
               ₦{totalOut.toLocaleString()}
@@ -258,30 +296,7 @@ export default function TransactionsScreen() {
             <Text style={styles.loadingText}>Loading transactions...</Text>
           </View>
         ) : (
-          <ScrollView
-            style={[styles.transactionsList, { maxWidth: MAX_W }]}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                tintColor={primaryColor}
-                colors={[primaryColor]}
-              />
-            }
-            onScroll={({ nativeEvent }) => {
-              const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-              if (
-                layoutMeasurement.height + contentOffset.y >=
-                  contentSize.height - 20 &&
-                hasMorePages &&
-                !isLoadingMore
-              ) {
-                handleLoadMore();
-              }
-            }}
-            scrollEventThrottle={400}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={[styles.transactionsList, { maxWidth: MAX_W }]}>
             {filtered.length ? (
               <>
                 {filtered.map(tx => (
@@ -367,7 +382,7 @@ export default function TransactionsScreen() {
 
             {/* extra space so bottom card isn't hidden under nav bars etc. */}
             <View style={{ height: 100 }} />
-          </ScrollView>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -381,6 +396,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
+  },
+  scrollView: {
+    flex: 1,
   },
   screenInner: {
     minHeight: '100%',
@@ -468,6 +486,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
     alignSelf: 'center',
+    ...Platform.select({
+      web: {
+        flexWrap: 'wrap',
+      },
+    }),
   },
   summaryCard: {
     flex: 1,
@@ -484,7 +507,6 @@ const styles = StyleSheet.create({
 
   /* ---------- list ---------- */
   transactionsList: {
-    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
     alignSelf: 'center',
