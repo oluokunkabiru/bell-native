@@ -44,6 +44,7 @@ jobs:
             echo "❌ SSH connection failed"
             echo "This could be due to:"
             echo "- Incorrect SSH key"
+            echo "$SSH_USER@$SSH_HOST"
             exit 1
           fi
 
