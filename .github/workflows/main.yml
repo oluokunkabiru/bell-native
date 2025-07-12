@@ -134,10 +134,24 @@ jobs:
       # Main deployment - Check directory and git repo
       - name: Check target directory and git repository
         run: |
-          # This step checks if the target directory and git repository exist on the remote server.
+          # This step checks if the target directory and git repository exist on the remote server and provides more debug info if not.
           SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
           [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e; [ -d '$SSH_DIR' ] && [ -d '$SSH_DIR/.git' ] || { echo '❌ Directory or .git not found'; exit 1; }"
+          echo "Checking for directory: $SSH_DIR and .git repository inside it..."
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e
+            echo 'Listing parent directory of $SSH_DIR:'
+            ls -l \"$(dirname '$SSH_DIR')\"
+            if [ ! -d '$SSH_DIR' ]; then
+              echo '❌ Directory $SSH_DIR not found'
+              exit 1
+            fi
+            if [ ! -d '$SSH_DIR/.git' ]; then
+              echo '❌ .git folder not found in $SSH_DIR'
+              ls -l '$SSH_DIR'
+              exit 1
+            fi
+            echo '✅ Directory and .git found'
+          "
 
       # Main deployment - Git reset and pull
       - name: Git reset and pull
@@ -158,21 +172,20 @@ jobs:
             elif [ -f package.json ]; then npm install --production; \
             else echo 'No package.json found, skipping dependency installation'; fi"
 
-      # Main deployment - Build project
-      - name: Build project
+      # Local build step
+      - name: Build project locally
         run: |
-          # This step builds the project on the remote server.
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          echo "Connecting to $SSH_USER@$SSH_HOST to build the project..."
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e
-            cd '$SSH_DIR' || { echo '❌ Failed to change to directory $SSH_DIR'; exit 1; }
-            if npm run | grep -q 'build'; then
-              echo '✅ Build script found, running build...'
-              npm run build || { echo '❌ Build failed'; exit 1; }
-            else
-              echo '⚠️ No build script found, skipping build'
-            fi"
+          echo "Building project locally..."
+          npm install --production
+          npm run build
+
+      # Upload build folder to server
+      - name: Upload build folder to server
+        run: |
+          echo "Uploading build folder to $SSH_USER@$SSH_HOST:$SSH_DIR ..."
+          SCP_CMD="scp -o StrictHostKeyChecking=no -o ConnectTimeout=30"
+          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SCP_CMD="$SCP_CMD -P $SSH_PORT"
+          $SCP_CMD -r ./build/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
 
       # Main deployment - Manage PM2
       - name: Manage PM2
