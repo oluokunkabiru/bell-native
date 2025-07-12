@@ -1,67 +1,296 @@
-name: Deploy to Server via SSH (robust)
+# .github/workflows/deploy.yml
+name: Deploy from Variables
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
+    # Expose variables to every step
+    env:
+      SSH_KEY_PLAIN: ${{ vars.V_KEY }}
+      SSH_USER:      ${{ vars.V_USER }}
+      SSH_HOST:      ${{ vars.V_HOST }}
+      SSH_DIR:       ${{ vars.V_DIR }}
+      SSH_BRANCH:    ${{ vars.V_BRANCH }}
+      SSH_PORT:      ${{ vars.V_PORT }}   # Optional - leave empty if using default port 22
+    
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Add server to known_hosts
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+      
+      # Debug step - shows variable info without exposing secrets
+      - name: Debug deployment variables
         run: |
+          echo "::group::Deployment Configuration"
+          echo "SSH_USER: $SSH_USER"
+          echo "SSH_HOST: $SSH_HOST"
+          echo "SSH_DIR: $SSH_DIR"
+          echo "SSH_BRANCH: $SSH_BRANCH"
+          echo "SSH_PORT: ${SSH_PORT:-22}"
+          echo "SSH_KEY length: ${#SSH_KEY_PLAIN}"
+          
+          # Check if required variables are set
+          [ -z "$SSH_USER" ] && echo "❌ SSH_USER is not set" || echo "✅ SSH_USER is set"
+          [ -z "$SSH_HOST" ] && echo "❌ SSH_HOST is not set" || echo "✅ SSH_HOST is set"
+          [ -z "$SSH_DIR" ] && echo "❌ SSH_DIR is not set" || echo "✅ SSH_DIR is set"
+          [ -z "$SSH_BRANCH" ] && echo "❌ SSH_BRANCH is not set" || echo "✅ SSH_BRANCH is set"
+          [ -z "$SSH_KEY_PLAIN" ] && echo "❌ SSH_KEY_PLAIN is not set" || echo "✅ SSH_KEY_PLAIN is set"
+          echo "::endgroup::"
+      
+      # Install SSH key
+      - name: Setup SSH key
+        run: |
+          echo "::group::SSH Key Setup"
           mkdir -p ~/.ssh
-          echo "# Try to fetch the host key with timeout"
-          if ssh-keyscan -T 30 -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
-            echo "✅ Successfully added host key to known_hosts"
+          
+          # Write SSH key to file
+          printf '%s\n' "$SSH_KEY_PLAIN" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Verify key format
+          if head -1 ~/.ssh/id_rsa | grep -q "BEGIN.*PRIVATE KEY"; then
+            echo "✅ SSH key format appears correct"
           else
-            echo "❌ Failed to get host key via ssh-keyscan"
+            echo "❌ SSH key format may be incorrect"
+            echo "First line: $(head -1 ~/.ssh/id_rsa)"
           fi
-          echo "Current known_hosts content:"
-          cat ~/.ssh/known_hosts
-
-      - name: Test SSH connection
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-        run: |
-          echo "# Test basic SSH connection"
-          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes "$SSH_USER@$SSH_HOST" "echo 'SSH connection successful'"; then
-            echo "✅ SSH connection successful"
+          
+          # Start SSH agent and add key
+          eval "$(ssh-agent -s)"
+          
+          if ssh-add ~/.ssh/id_rsa; then
+            echo "✅ SSH key added successfully"
+            ssh-add -l
           else
-            echo "❌ SSH connection failed"
-            echo "This could be due to:"
-            echo "- Incorrect SSH key"
-            echo "$SSH_USER@$SSH_HOST"
+            echo "❌ Failed to add SSH key"
             exit 1
           fi
-
-      - name: Deploy to server
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+          echo "::endgroup::"
+      
+      # Add server to known hosts
+      - name: Add server to known hosts
         run: |
-          echo "### Connecting to server ###"
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$SSH_USER@$SSH_HOST" "
-            cd /path/to/app || { echo '❌ Target directory does not exist'; exit 1; }
-            [ -d .git ] || { echo '❌ Not a git repository'; exit 1; }
-            echo '→ Restarting with PM2'
-            if pm2 reload ecosystem.config.js --only app; then
-              echo '✅ PM2 reload successful'
-            else
-              echo '⚠️ PM2 reload failed, trying start...'
-              pm2 start ecosystem.config.js --only app
+          echo "::group::Known Hosts Setup"
+          mkdir -p ~/.ssh
+          
+          echo "Scanning SSH host: $SSH_HOST"
+          
+          # Try to get host key with timeout
+          if timeout 30 ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "✅ Successfully added host key"
+          else
+            echo "⚠️ Failed to get host key via ssh-keyscan (will skip host key checking)"
+          fi
+          
+          # Show what was added (if anything)
+          if [ -f ~/.ssh/known_hosts ]; then
+            echo "Known hosts entries:"
+            wc -l ~/.ssh/known_hosts
+          else
+            echo "No known_hosts file created"
+          fi
+          echo "::endgroup::"
+      
+      # Test SSH connection
+      - name: Test SSH connection
+        run: |
+          echo "::group::SSH Connection Test"
+          
+          # Build SSH command with optional port
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes"
+          if [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ]; then
+            SSH_CMD="$SSH_CMD -p $SSH_PORT"
+          fi
+          
+          echo "Testing connection: $SSH_USER@$SSH_HOST"
+          echo "SSH command: $SSH_CMD"
+          
+          if $SSH_CMD "$SSH_USER@$SSH_HOST" "echo 'SSH connection successful - Remote host: \$(hostname)'"; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ SSH connection test failed"
+            echo "Common causes:"
+            echo "- Wrong SSH key"
+            echo "- Wrong username"
+            echo "- Wrong hostname/IP"
+            echo "- Firewall blocking connection"
+            echo "- SSH service not running"
+            exit 1
+          fi
+          echo "::endgroup::"
+      
+      # Main deployment
+      - name: Deploy to server
+        run: |
+          echo "::group::Deployment"
+          
+          # Build SSH command with optional port
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
+          if [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ]; then
+            SSH_CMD="$SSH_CMD -p $SSH_PORT"
+          fi
+          
+          echo "### Starting deployment ###"
+          echo "Target: $SSH_USER@$SSH_HOST"
+          echo "Directory: $SSH_DIR"
+          echo "Branch: $SSH_BRANCH"
+          echo "Command: $SSH_CMD"
+          
+          $SSH_CMD "$SSH_USER@$SSH_HOST" << EOF
+            set -euo pipefail
+            
+            echo "=== DEPLOYMENT START ==="
+            echo "Remote host: \$(hostname)"
+            echo "Current user: \$(whoami)"
+            echo "Current time: \$(date)"
+            echo "Target directory: $SSH_DIR"
+            
+            # Check if target directory exists
+            if [ ! -d "$SSH_DIR" ]; then
+              echo "❌ Target directory does not exist: $SSH_DIR"
+              echo "Please create the directory first or check the path"
+              exit 1
             fi
-          "
+            
+            # Change to target directory
+            cd "$SSH_DIR"
+            echo "✅ Changed to: \$(pwd)"
+            
+            # Check if it's a git repository
+            if [ ! -d ".git" ]; then
+              echo "❌ Not a git repository: $SSH_DIR"
+              echo "Please initialize git repository first"
+              exit 1
+            fi
+            
+            # Show current git status
+            echo "Current git status:"
+            git status --porcelain
+            
+            echo "→ Git reset & pull"
+            git reset --hard HEAD
+            
+            # Check if remote branch exists
+            if git ls-remote --heads origin "$SSH_BRANCH" | grep -q "$SSH_BRANCH"; then
+              echo "✅ Remote branch '$SSH_BRANCH' exists"
+            else
+              echo "❌ Remote branch '$SSH_BRANCH' does not exist"
+              echo "Available branches:"
+              git branch -r
+              exit 1
+            fi
+            
+            # Pull latest changes
+            git pull origin "$SSH_BRANCH"
+            echo "✅ Git pull completed"
+            
+            # Show current commit
+            echo "Current commit: \$(git rev-parse --short HEAD) - \$(git log -1 --pretty=format:'%s')"
+            
+            echo "→ Installing dependencies"
+            
+            # Install dependencies based on available lock files
+            if [ -f package-lock.json ]; then
+              echo "Using npm ci (package-lock.json found)"
+              npm ci --production
+            elif [ -f yarn.lock ]; then
+              echo "Using yarn (yarn.lock found)"
+              yarn install --frozen-lockfile --production
+            elif [ -f pnpm-lock.yaml ]; then
+              echo "Using pnpm (pnpm-lock.yaml found)"
+              pnpm install --frozen-lockfile --production
+            elif [ -f package.json ]; then
+              echo "Using npm install (package.json found)"
+              npm install --production
+            else
+              echo "⚠️ No package.json found, skipping dependency installation"
+            fi
+            
+            echo "✅ Dependencies installed"
+            
+            echo "→ Building project"
+            
+            # Check if build script exists
+            if npm run | grep -q "build"; then
+              echo "Running npm run build"
+              npm run build
+              echo "✅ Build completed"
+            else
+              echo "⚠️ No build script found, skipping build step"
+            fi
+            
+            echo "→ Managing PM2 processes"
+            
+            # Check if PM2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              echo "❌ PM2 is not installed"
+              echo "Please install PM2: npm install -g pm2"
+              exit 1
+            fi
+            
+            # Check if ecosystem config exists
+            if [ -f ecosystem.config.js ]; then
+              echo "Using ecosystem.config.js"
+              
+              # Try to reload first, then start if reload fails
+              if pm2 reload ecosystem.config.js --only app; then
+                echo "✅ PM2 reload successful"
+              else
+                echo "⚠️ PM2 reload failed, trying to start..."
+                if pm2 start ecosystem.config.js --only app; then
+                  echo "✅ PM2 start successful"
+                else
+                  echo "❌ PM2 start failed"
+                  pm2 logs --lines 10
+                  exit 1
+                fi
+              fi
+            else
+              echo "❌ ecosystem.config.js not found"
+              echo "Available PM2 processes:"
+              pm2 list
+              exit 1
+            fi
+            
+            # Show PM2 status
+            echo "PM2 processes:"
+            pm2 list
+            
+            echo "✅ Deploy completed successfully at \$(date)"
+            echo "=== DEPLOYMENT END ==="
+          EOF
+          
+          echo "### Deployment finished ###"
+          echo "::endgroup::"
+      
+      # Post-deployment verification (optional)
+      - name: Verify deployment
+        run: |
+          echo "::group::Deployment Verification"
+          
+          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10"
+          if [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ]; then
+            SSH_CMD="$SSH_CMD -p $SSH_PORT"
+          fi
+          
+          echo "Verifying deployment..."
+          
+          $SSH_CMD "$SSH_USER@$SSH_HOST" << EOF
+            cd "$SSH_DIR"
+            
+            echo "Current commit: \$(git rev-parse --short HEAD)"
+            echo "Last commit message: \$(git log -1 --pretty=format:'%s')"
+            echo "PM2 status:"
+            pm2 list
+            
+            # Optional: Check if application is responding
+            # curl -f http://localhost:3000/health || echo "Health check failed"
+          EOF
+          
+          echo "✅ Deployment verification completed"
+          echo "::endgroup::"
