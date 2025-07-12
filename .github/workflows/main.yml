@@ -1,80 +1,94 @@
 # .github/workflows/deploy.yml
-name: CI Build & Upload
+name: CI – React‑Native‑Web Build & Upload
 
 on:
   push:
-    branches: [ master ]        # adjust if needed
-  workflow_dispatch: {}         # manual trigger
+    branches: [ master ]          # adjust if needed
+  workflow_dispatch: {}           # manual trigger
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     env:
-      NODE_VERSION: '20'                       # bump if you need a newer node
+      NODE_VERSION: 20            # bump if you need a newer node
       SSH_USER:   ${{ secrets.SSH_USER }}
       SSH_HOST:   ${{ secrets.SSH_HOST }}
       SSH_DIR:    ${{ secrets.SSH_DIR }}
-      SSH_PORT:   ${{ secrets.SSH_PORT }}      # leave blank for 22
+      SSH_PORT:   ${{ secrets.SSH_PORT }}    # leave blank for 22
+      CI: "true"                  # speeds up some npm installs
 
     steps:
-    # ─────────────────────────────────────────────────────────────
-    # 0.  Checkout & Node
-    # ─────────────────────────────────────────────────────────────
+    # ────────────────────────────────────────────────
+    # 0. Checkout & Node
+    # ────────────────────────────────────────────────
     - uses: actions/checkout@v4
 
     - name: Set up Node
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
+        cache: 'npm'              # caches ~/.npm
 
-    # ─────────────────────────────────────────────────────────────
-    # 1.  Install & build locally
-    # ─────────────────────────────────────────────────────────────
-    - name: Install deps & build
-      run: |
-        npm ci
-        npm run build:web          # outputs ./build (or dist)
+    # ────────────────────────────────────────────────
+    # 1. Install deps & build
+    # ────────────────────────────────────────────────
+    - name: Install dependencies
+      run: npm ci                 # or yarn install --frozen-lockfile
 
-    # ─────────────────────────────────────────────────────────────
-    # 2.  Prepare SSH
-    # ─────────────────────────────────────────────────────────────
+    # Expo RN‑web example (creates web-build/)
+    - name: Build web bundle
+      run: npm run web            # or npm run build:web for your script
+
+    # Path of built assets:
+    #  • Expo:    web-build/
+    #  • CRA/vite: build/ or dist/
+    BUILD_DIR=web-build           # change if yours is ./build
+
+    # ────────────────────────────────────────────────
+    # 2. Prepare SSH
+    # ────────────────────────────────────────────────
     - name: Add SSH key
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+        printf '%s\n' "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         eval "$(ssh-agent -s)"
         ssh-add ~/.ssh/id_rsa
-        # Optional known_hosts (skip errors during debug)
         ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts || true
 
-    # ─────────────────────────────────────────────────────────────
-    # 3.  Rsync build folder to server
-    #     (rsync is faster + deletes removed files)
-    # ─────────────────────────────────────────────────────────────
+    # ────────────────────────────────────────────────
+    # 3. Upload build folder to server via rsync
+    # ────────────────────────────────────────────────
     - name: Upload build to server
       run: |
         RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
         [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
-        rsync -avz --delete -e "$RSYNC_SSH"/build/ "$SSH_USER@$SSH_HOST:$SSH_DIR/build/"
 
-    # ─────────────────────────────────────────────────────────────
-    # 4.  Restart (or start) PM2 on server
-    # ─────────────────────────────────────────────────────────────
+        # ensure remote target dir exists
+        $RSYNC_SSH "$SSH_USER@$SSH_HOST" "mkdir -p $SSH_DIR/web-build"
+
+        rsync -avz --delete -e "$RSYNC_SSH" \
+          $BUILD_DIR/ "$SSH_USER@$SSH_HOST:$SSH_DIR/web-build/"
+
+    # ────────────────────────────────────────────────
+    # 4. Restart (or start) PM2
+    # ────────────────────────────────────────────────
     - name: Restart PM2
       run: |
         SSH_CMD="ssh -o StrictHostKeyChecking=no"
         [ -n "$SSH_PORT" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
+
         $SSH_CMD "$SSH_USER@$SSH_HOST" << 'EOF'
           set -e
           cd "$SSH_DIR"
-          # Only install server deps once (optional):
+
+          # First‑time dependency install (optional)
           if [ ! -d node_modules ]; then
-            echo "Installing production dependencies on server..."
+            echo "Installing production dependencies..."
             npm ci --production
           fi
+
           echo "Reloading PM2"
           pm2 reload ecosystem.config.js --only app \
             || pm2 start ecosystem.config.js --only app
