@@ -1,85 +1,77 @@
 # .github/workflows/deploy.yml
-name: Deploy to Server via SSH (verbose)
+name: Deploy to Server via SSH (robust)
 
 on:
   push:
     branches:
-      - master     # change if you deploy from another branch
+      - master
 
 jobs:
   deploy:
-    name: Build & restart on server
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------------------------------------
-      # 1. Checkout the repository
-      # -----------------------------------------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # 1) Checkout source
+      - uses: actions/checkout@v4
 
-      # -----------------------------------------------------------
-      # 2. Start ssh-agent and add the private key
-      # -----------------------------------------------------------
+      # 2) Start ssh-agent & add key
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
       # -----------------------------------------------------------
-      # 3. Add host fingerprint to known_hosts
+      # 3) Add server fingerprint
+      #    Option A: ignore failure with `|| true`
       # -----------------------------------------------------------
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts || true
-          echo "Known hosts now contains:"
+          # try to fetch the host key (wait up to 30 s); ignore errors so the job doesn't abort
+          ssh-keyscan -T 30 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts || true
+          echo "::group::known_hosts content"
           cat ~/.ssh/known_hosts
+          echo "::endgroup::"
 
       # -----------------------------------------------------------
-      # 4. Connect, pull, install, build, restart – with full logging
+      # 4) Deploy
       # -----------------------------------------------------------
       - name: Deploy to server
+        env:
+          # Uncomment the line below and your secret if you use a custom port (e.g. 2222)
+          # SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          echo "### SSH connection debug (verbose mode) ###"
-          ssh -vvv -o BatchMode=yes -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-                set -exuo pipefail
+          # Add -p $SSH_PORT if you use a non‑standard port
+          SSH_CMD="ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          # If custom port:
+          # SSH_CMD="ssh -p $SSH_PORT -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
 
-                echo "=== Connected to $(hostname) ==="
-                echo "→ cd to project directory"
-                cd ${{ secrets.SSH_DIR }}
+          echo "### Connecting to server (verbose) ###"
+          $SSH_CMD -vvv << 'EOF'
+            set -euo pipefail
 
-                echo "→ Current commit:"
-                git --no-pager log -1 --oneline || true
+            echo "Remote host: $(hostname)"
+            cd ${{ secrets.SSH_DIR }}
 
-                echo "→ Resetting local changes"
-                git reset --hard
+            echo "→ git reset & pull"
+            git reset --hard
+            git pull origin ${{ secrets.SSH_BRANCH }}
 
-                echo "→ Pulling latest from ${{ secrets.SSH_BRANCH }}"
-                git pull origin ${{ secrets.SSH_BRANCH }}
+            echo "→ Installing deps"
+            if [ -f package-lock.json ]; then
+              npm ci
+            elif [ -f yarn.lock ]; then
+              yarn install --frozen-lockfile
+            else
+              npm install
+            fi
 
-                echo "→ Node version:"
-                node -v || true
+            echo "→ Building project"
+            npm run build
 
-                echo "→ Installing dependencies"
-                if [ -f package-lock.json ]; then
-                  npm ci
-                elif [ -f yarn.lock ]; then
-                  yarn install --frozen-lockfile
-                else
-                  npm install
-                fi
+            echo "→ Restarting with PM2"
+            pm2 reload ecosystem.config.js --only app \
+              || pm2 start ecosystem.config.js --only app
 
-                echo "→ Building project"
-                npm run build
-
-                echo "→ Restarting with PM2"
-                if pm2 list | grep -q "app"; then
-                  pm2 reload ecosystem.config.js --only app
-                else
-                  pm2 start ecosystem.config.js --only app
-                fi
-
-                echo "✅ Deploy complete on $(date)"
+            echo "✅ Deploy done at $(date)"
           EOF
