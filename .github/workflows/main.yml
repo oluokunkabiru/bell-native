@@ -16,11 +16,11 @@ jobs:
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.SERVER_KEY }}
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
       - name: Add server to known_hosts
         env:
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           mkdir -p ~/.ssh
           echo "# Try to fetch the host key with timeout"
@@ -34,8 +34,8 @@ jobs:
 
       - name: Test SSH connection
         env:
-          SSH_USER: ${{ secrets.SERVER_USER }}
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           echo "# Test basic SSH connection"
           if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes "$SSH_USER@$SSH_HOST" "echo 'SSH connection successful'"; then
@@ -49,8 +49,8 @@ jobs:
 
       - name: Deploy to server
         env:
-          SSH_USER: ${{ secrets.SERVER_USER }}
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           echo "### Connecting to server ###"
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$SSH_USER@$SSH_HOST" "
