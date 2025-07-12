@@ -35,7 +35,7 @@ jobs:
     - name: Install deps & build
       run: |
         npm ci
-        npm run build          # outputs ./build (or dist)
+        npm run build:web          # outputs ./build (or dist)
 
     # ─────────────────────────────────────────────────────────────
     # 2.  Prepare SSH
