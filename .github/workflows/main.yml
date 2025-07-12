@@ -14,18 +14,22 @@ jobs:
     steps:
       # 1) Check out repo so other actions (if any) can read it
       - name: Checkout repository
-        uses: actions/checkout@v4
+        # uses: actions/checkout@v4
 
       # 2) Start SSH agent & add your private key
       - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.8.0
+        # uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
       # 3) SSH into your server and run the deploy script
       - name: Pull, install, build, restart
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          install -m 600 -D /home/gobeller/.ssh/demo_rsa
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/demo_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+          name: connect and pull
+          ssh  ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e                       # stop on first error
             echo "→ Switching to project dir"
             cd ${{ secrets.SSH_DIR }}
