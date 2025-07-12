@@ -58,7 +58,7 @@ jobs:
       run: |
         RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
         [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
-        rsync -avz --delete -e "$RSYNC_SSH"build/ "$SSH_USER@$SSH_HOST:$SSH_DIR/build/"
+        rsync -avz --delete -e "$RSYNC_SSH"/build/ "$SSH_USER@$SSH_HOST:$SSH_DIR/build/"
 
     # ─────────────────────────────────────────────────────────────
     # 4.  Restart (or start) PM2 on server
