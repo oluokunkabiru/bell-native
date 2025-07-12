@@ -134,9 +134,10 @@ jobs:
       # Main deployment - Check directory and git repo
       - name: Check target directory and git repository
         run: |
+          # This step checks if the target directory and git repository exist on the remote server.
           SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
           [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e; [ -d '$SSH_DIR' ] && cd '$SSH_DIR' && [ -d .git ]"
+          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e; [ -d '$SSH_DIR' ] && [ -d '$SSH_DIR/.git' ] || { echo '❌ Directory or .git not found'; exit 1; }"
 
       # Main deployment - Git reset and pull
       - name: Git reset and pull
