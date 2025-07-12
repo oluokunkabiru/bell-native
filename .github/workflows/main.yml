@@ -1,232 +1,82 @@
 # .github/workflows/deploy.yml
-name: Deploy from Variables
+name: CI Build & Upload
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch:  # Allow manual trigger
+    branches: [ master ]        # adjust if needed
+  workflow_dispatch: {}         # manual trigger
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
-    # Expose variables to every step
+
     env:
-      # SSH_KEY_PLAIN: ${{ vars.V_KEY }}
-      # SSH_USER:      ${{ vars.V_USER }}
-      # SSH_HOST:      ${{ vars.V_HOST }}
-      # SSH_DIR:       ${{ vars.V_DIR }}
-      # SSH_BRANCH:    ${{ vars.V_BRANCH }}
-      # SSH_PORT:      ${{ vars.V_PORT }}   # Optional - leave empty if using default port 22
-      SSH_KEY_PLAIN: ${{ secrets.SSH_KEY }}
-      SSH_USER:      ${{ secrets.SSH_USER }}
-      
-      SSH_HOST:      ${{ secrets.SSH_HOST }}
-      SSH_DIR:       ${{ secrets.SSH_DIR }}
-      SSH_BRANCH:    ${{ secrets.SSH_BRANCH  }}
-      SSH_PORT:      ${{ vars.V_PORT }}   
-    
+      NODE_VERSION: '20'                       # bump if you need a newer node
+      SSH_USER:   ${{ secrets.SSH_USER }}
+      SSH_HOST:   ${{ secrets.SSH_HOST }}
+      SSH_DIR:    ${{ secrets.SSH_DIR }}
+      SSH_PORT:   ${{ secrets.SSH_PORT }}      # leave blank for 22
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      # Debug step - shows variable info without exposing secrets
-      - name: Debug deployment variables
-        run: |
-          echo "::group::Deployment Configuration"
-          echo "SSH_USER: $SSH_USER"
-          echo "SSH_HOST: $SSH_HOST"
-          echo "SSH_DIR: $SSH_DIR"
-          echo "SSH_BRANCH: $SSH_BRANCH"
-          echo "SSH_PORT: ${SSH_PORT:-22}"
-          echo "SSH_KEY length: ${#SSH_KEY_PLAIN}"
-          
-          # Check if required variables are set
-          [ -z "$SSH_USER" ] && echo "❌ SSH_USER is not set" || echo "✅ SSH_USER is set"
-          [ -z "$SSH_HOST" ] && echo "❌ SSH_HOST is not set" || echo "✅ SSH_HOST is set"
-          [ -z "$SSH_DIR" ] && echo "❌ SSH_DIR is not set" || echo "✅ SSH_DIR is set"
-          [ -z "$SSH_BRANCH" ] && echo "❌ SSH_BRANCH is not set" || echo "✅ SSH_BRANCH is set"
-          [ -z "$SSH_KEY_PLAIN" ] && echo "❌ SSH_KEY_PLAIN is not set" || echo "✅ SSH_KEY_PLAIN is set"
-          echo "::endgroup::"
-      
-      # Install SSH key
-      - name: Setup SSH key
-        run: |
-          echo "::group::SSH Key Setup"
-          mkdir -p ~/.ssh
-          
-          # Write SSH key to file
-          printf '%s\n' "$SSH_KEY_PLAIN" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Verify key format
-          if head -1 ~/.ssh/id_rsa | grep -q "BEGIN.*PRIVATE KEY"; then
-            echo "✅ SSH key format appears correct"
-          else
-            echo "❌ SSH key format may be incorrect"
-            echo "First line: $(head -1 ~/.ssh/id_rsa)"
-          fi
-          
-          # Start SSH agent and add key
-          eval "$(ssh-agent -s)"
-          
-          if ssh-add ~/.ssh/id_rsa; then
-            echo "✅ SSH key added successfully"
-            ssh-add -l
-          else
-            echo "❌ Failed to add SSH key"
-            exit 1
-          fi
-          echo "::endgroup::"
-      
-      # Add server to known hosts
-      - name: Add server to known hosts
-        run: |
-          echo "::group::Known Hosts Setup"
-          mkdir -p ~/.ssh
-          
-          echo "Scanning SSH host: $SSH_HOST"
-          
-          # Try to get host key with timeout
-          if timeout 30 ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
-            echo "✅ Successfully added host key"
-          else
-            echo "⚠️ Failed to get host key via ssh-keyscan (will skip host key checking)"
-          fi
-          
-          # Show what was added (if anything)
-          if [ -f ~/.ssh/known_hosts ]; then
-            echo "Known hosts entries:"
-            wc -l ~/.ssh/known_hosts
-          else
-            echo "No known_hosts file created"
-          fi
-          echo "::endgroup::"
-      
-      # Test SSH connection
-      - name: Test SSH connection
-        run: |
-          echo "::group::SSH Connection Test"
-          
-          # Build SSH command with optional port
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes"
-          if [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ]; then
-            SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          fi
-          
-          echo "Testing connection: $SSH_USER@$SSH_HOST"
-          echo "SSH command: $SSH_CMD"
-          
-          if $SSH_CMD "$SSH_USER@$SSH_HOST" "echo 'SSH connection successful - Remote host: \$(hostname)'"; then
-            echo "✅ SSH connection test passed"
-          else
-            echo "❌ SSH connection test failed"
-            echo "Common causes:"
-            echo "- Wrong SSH key"
-            echo "- Wrong username"
-            echo "- Wrong hostname/IP"
-            echo "- Firewall blocking connection"
-            echo "- SSH service not running"
-            exit 1
-          fi
-          echo "::endgroup::"
-      
-      # Main deployment - Check directory and git repo
-      - name: Check target directory and git repository
-        run: |
-          # This step checks if the target directory and git repository exist on the remote server and provides more debug info if not.
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          echo "Checking for directory: $SSH_DIR and .git repository inside it..."
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e
-            echo 'Listing parent directory of $SSH_DIR:'
-            ls -l \"$(dirname '$SSH_DIR')\"
-            if [ ! -d '$SSH_DIR' ]; then
-              echo '❌ Directory $SSH_DIR not found'
-              exit 1
-            fi
-            if [ ! -d '$SSH_DIR/.git' ]; then
-              echo '❌ .git folder not found in $SSH_DIR'
-              ls -l '$SSH_DIR'
-              exit 1
-            fi
-            echo '✅ Directory and .git found'
-          "
+    # ─────────────────────────────────────────────────────────────
+    # 0.  Checkout & Node
+    # ─────────────────────────────────────────────────────────────
+    - uses: actions/checkout@v4
 
-      # Main deployment - Git reset and pull
-      - name: Git reset and pull
-        run: |
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "cd '$SSH_DIR' && git reset --hard HEAD && git pull origin '$SSH_BRANCH'"
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
 
-      # Main deployment - Install dependencies
-      - name: Install dependencies
-        run: |
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "cd '$SSH_DIR' && \
-            if [ -f package-lock.json ]; then npm ci --production; \
-            elif [ -f yarn.lock ]; then yarn install --frozen-lockfile --production; \
-            elif [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile --production; \
-            elif [ -f package.json ]; then npm install --production; \
-            else echo 'No package.json found, skipping dependency installation'; fi"
+    # ─────────────────────────────────────────────────────────────
+    # 1.  Install & build locally
+    # ─────────────────────────────────────────────────────────────
+    - name: Install deps & build
+      run: |
+        npm ci
+        npm run build          # outputs ./build (or dist)
 
-      # Local build step
-      - name: Build project locally
-        run: |
-          echo "Building project locally..."
-          npm install --production
-          npm run build
+    # ─────────────────────────────────────────────────────────────
+    # 2.  Prepare SSH
+    # ─────────────────────────────────────────────────────────────
+    - name: Add SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/id_rsa
+        # Optional known_hosts (skip errors during debug)
+        ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts || true
 
-      # Upload build folder to server
-      - name: Upload build folder to server
-        run: |
-          echo "Uploading build folder to $SSH_USER@$SSH_HOST:$SSH_DIR ..."
-          SCP_CMD="scp -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SCP_CMD="$SCP_CMD -P $SSH_PORT"
-          $SCP_CMD -r ./build/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
+    # ─────────────────────────────────────────────────────────────
+    # 3.  Rsync build folder to server
+    #     (rsync is faster + deletes removed files)
+    # ─────────────────────────────────────────────────────────────
+    - name: Upload build to server
+      run: |
+        RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
+        [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
+        rsync -avz --delete -e "$RSYNC_SSH" ./build/ "$SSH_USER@$SSH_HOST:$SSH_DIR/build/"
 
-      # Main deployment - Manage PM2
-      - name: Manage PM2
-        run: |
-          # This step reloads or starts the app using PM2 on the remote server.
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30"
-          [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
-          echo "Connecting to $SSH_USER@$SSH_HOST to manage PM2..."
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e
-            cd '$SSH_DIR' || { echo '❌ Failed to change to directory $SSH_DIR'; exit 1; }
-            if ! command -v pm2 &> /dev/null; then
-              echo '❌ PM2 is not installed'
-              exit 1
-            fi
-            if [ -f ecosystem.config.js ]; then
-              echo '✅ ecosystem.config.js found, reloading app...'
-              pm2 reload ecosystem.config.js --only app || pm2 start ecosystem.config.js --only app || { echo '❌ PM2 reload/start failed'; exit 1; }
-            else
-              echo '❌ ecosystem.config.js not found'
-              pm2 list
-              exit 1
-            fi
-            pm2 list"
-
-      # Post-deployment verification (optional)
-      - name: Verify deployment
-        run: |
-          echo "::group::Deployment Verification"
-          # This step verifies the deployment and shows commit and PM2 status.
-          SSH_CMD="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10"
-          if [ -n "${SSH_PORT}" ] && [ "${SSH_PORT}" != "22" ]; then
-            SSH_CMD="$SSH_CMD -p $SSH_PORT"
+    # ─────────────────────────────────────────────────────────────
+    # 4.  Restart (or start) PM2 on server
+    # ─────────────────────────────────────────────────────────────
+    - name: Restart PM2
+      run: |
+        SSH_CMD="ssh -o StrictHostKeyChecking=no"
+        [ -n "$SSH_PORT" ] && SSH_CMD="$SSH_CMD -p $SSH_PORT"
+        $SSH_CMD "$SSH_USER@$SSH_HOST" << 'EOF'
+          set -e
+          cd "$SSH_DIR"
+          # Only install server deps once (optional):
+          if [ ! -d node_modules ]; then
+            echo "Installing production dependencies on server..."
+            npm ci --production
           fi
-          echo "Verifying deployment..."
-          $SSH_CMD "$SSH_USER@$SSH_HOST" "set -e
-            cd '$SSH_DIR' || { echo '❌ Failed to change to directory $SSH_DIR'; exit 1; }
-            echo 'Current commit: ' $(git rev-parse --short HEAD)
-            echo 'Last commit message: ' $(git log -1 --pretty=format:'%s')
-            echo 'PM2 status:'
-            pm2 list
-            # Optional: Check if application is responding
-            # curl -f http://localhost:3000/health || echo 'Health check failed'"
-          echo "✅ Deployment verification completed"
-          echo "::endgroup::"
+          echo "Reloading PM2"
+          pm2 reload ecosystem.config.js --only app \
+            || pm2 start ecosystem.config.js --only app
+          pm2 save
+        EOF
