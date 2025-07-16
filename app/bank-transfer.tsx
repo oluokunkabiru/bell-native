@@ -697,12 +697,19 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 24,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
   },
   inputLabel: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
     marginBottom: 8,
+    marginLeft: 4, // slight left margin for better alignment
+    alignSelf: 'flex-start', // ensure label aligns left
   },
   textInput: {
     backgroundColor: '#1A1A1A',
@@ -719,6 +726,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   verifyButtonText: {
     fontSize: 16,
@@ -771,6 +782,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   continueButtonText: {
     fontSize: 16,
@@ -822,11 +837,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: '#FFFFFF',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   pinContainer: {
     alignItems: 'center',
@@ -867,6 +881,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   transferButtonText: {
     fontSize: 16,
@@ -950,6 +968,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   doneButtonText: {
     fontSize: 16,
