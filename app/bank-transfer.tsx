@@ -218,7 +218,7 @@ export default function BankTransfer() {
           await updateWalletBalance(response.data.data.user_balance_after);
         }
         
-        setResultData(response.data);
+        setResultData(response);
         console.log('Transfer successful:', response.data);
         console.log('Transfer response:', resultData);
 
@@ -514,7 +514,7 @@ export default function BankTransfer() {
 
 
 
-  const renderResulta = () => (
+  const renderResultb = () => (
   <View style={styles.stepContainer}>
     {/* Debug: Show raw JSON resultData */}
     {/* <Text style={{ color: 'gray', fontSize: 10 }}>
@@ -609,23 +609,23 @@ export default function BankTransfer() {
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Instrument Code:</Text>
-              <Text style={styles.receiptValue}>{resultData?.instrument_code}</Text>
+              <Text style={styles.receiptValue}>{resultData.data?.instrument_code}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Description:</Text>
-              <Text style={styles.receiptValue}>{resultData?.description}</Text>
+              <Text style={styles.receiptValue}>{resultData.data?.description}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Amount:</Text>
-              <Text style={styles.receiptValue}>₦{resultData?.user_amount?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData.data?.user_amount?.toLocaleString()}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Fee:</Text>
-              <Text style={styles.receiptValue}>₦{resultData?.user_charge_amount?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData.data?.user_charge_amount?.toLocaleString()}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>New Balance:</Text>
-              <Text style={styles.receiptValue}>₦{resultData?.user_balance_after?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData.data?.user_balance_after?.toLocaleString()}</Text>
             </View>
           </View>
         </>
