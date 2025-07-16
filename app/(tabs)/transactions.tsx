@@ -261,7 +261,7 @@ export default function TransactionsScreen() {
         </View>
 
         {/* ---------------- SUMMARY ---------------- */}
-        <View style={[styles.summaryContainer, { maxWidth: MAX_W }]}>
+        {/* <View style={[styles.summaryContainer, { maxWidth: MAX_W }]}>
           <View style={[
             styles.summaryCard, 
             { 
@@ -287,7 +287,7 @@ export default function TransactionsScreen() {
               ₦{totalOut.toLocaleString()}
             </Text>
           </View>
-        </View>
+        </View> */}
 
         {/* ---------------- LIST OR LOADER ---------------- */}
         {isLoading ? (

@@ -594,62 +594,64 @@ export default function DashboardScreen() {
         </View>
 
         {/* Recent Transactions */}
-        <View style={styles.transactionsContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity 
-              style={styles.viewAllButton}
-              onPress={() => router.push('/(tabs)/transactions')}
-            >
-              <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
-              <ChevronRight size={16} color={primaryColor} />
-            </TouchableOpacity>
-          </View>
+        {displayMenuItems['display-transaction-histories'] !== false && (
+          <View style={styles.transactionsContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Transactions</Text>
+              <TouchableOpacity 
+                style={styles.viewAllButton}
+                onPress={() => router.push('/(tabs)/transactions')}
+              >
+                <Text style={[styles.viewAllText, { color: primaryColor }]}>View All</Text>
+                <ChevronRight size={16} color={primaryColor} />
+              </TouchableOpacity>
+            </View>
 
-          {isLoadingTransactions ? (
-            <View style={styles.loadingTransactions}>
-              <Text style={styles.loadingText}>Loading transactions...</Text>
-            </View>
-          ) : transactions.length > 0 ? (
-            <View style={styles.transactionsList}>
-              {transactions.map((transaction) => (
-                <TouchableOpacity 
-                  key={transaction.id} 
-                  style={styles.transactionItem}
-                  onPress={() => handleTransactionPress(transaction)}
-                >
-                  <View style={styles.transactionLeft}>
-                    <View style={[
-                      styles.transactionIconContainer,
-                      { backgroundColor: transaction.transaction_type === 'credit' ? '#10b98120' : '#ef444420' }
+            {isLoadingTransactions ? (
+              <View style={styles.loadingTransactions}>
+                <Text style={styles.loadingText}>Loading transactions...</Text>
+              </View>
+            ) : transactions.length > 0 ? (
+              <View style={styles.transactionsList}>
+                {transactions.map((transaction) => (
+                  <TouchableOpacity 
+                    key={transaction.id} 
+                    style={styles.transactionItem}
+                    onPress={() => handleTransactionPress(transaction)}
+                  >
+                    <View style={styles.transactionLeft}>
+                      <View style={[
+                        styles.transactionIconContainer,
+                        { backgroundColor: transaction.transaction_type === 'credit' ? '#10b98120' : '#ef444420' }
+                      ]}>
+                        {transaction.transaction_type === 'credit' ? (
+                          <ArrowDownRight size={18} color="#10b981" />
+                        ) : (
+                          <ArrowUpRight size={18} color="#ef4444" />
+                        )}
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text style={styles.transactionDescription}>{transaction.description}</Text>
+                        <Text style={styles.transactionDate}>{formatDate(transaction.created_at)}</Text>
+                      </View>
+                    </View>
+                    <Text style={[
+                      styles.transactionAmount,
+                      { color: transaction.transaction_type === 'credit' ? '#10b981' : '#ef4444' }
                     ]}>
-                      {transaction.transaction_type === 'credit' ? (
-                        <ArrowDownRight size={18} color="#10b981" />
-                      ) : (
-                        <ArrowUpRight size={18} color="#ef4444" />
-                      )}
-                    </View>
-                    <View style={styles.transactionInfo}>
-                      <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                      <Text style={styles.transactionDate}>{formatDate(transaction.created_at)}</Text>
-                    </View>
-                  </View>
-                  <Text style={[
-                    styles.transactionAmount,
-                    { color: transaction.transaction_type === 'credit' ? '#10b981' : '#ef4444' }
-                  ]}>
-                    {transaction.transaction_type === 'credit' ? '+' : '-'}₦{parseFloat(transaction.user_amount).toLocaleString()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.emptyTransactions}>
-              <Text style={styles.emptyText}>No recent transactions</Text>
-              <Text style={styles.emptySubtext}>Your transactions will appear here</Text>
-            </View>
-          )}
-        </View>
+                      {transaction.transaction_type === 'credit' ? '+' : '-'}₦{parseFloat(transaction.user_amount).toLocaleString()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyTransactions}>
+                <Text style={styles.emptyText}>No recent transactions</Text>
+                <Text style={styles.emptySubtext}>Your transactions will appear here</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Promotions */}
         {displayMenuItems['display-banner'] !== false && (
