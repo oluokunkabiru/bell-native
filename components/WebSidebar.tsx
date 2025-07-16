@@ -131,7 +131,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       icon: Bitcoin, // You can replace with a crypto icon if available
       route: '/crypto-transfer' as const,
       active: pathname === '/crypto-transfer',
-      key: 'display-crypto-transfer-menu',
+      key: 'display-crypto-exchange-menu',
     },
     {
       title: 'Wallet Transfer',

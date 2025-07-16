@@ -188,9 +188,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
 
     // Fetch organization using identifier (currently hardcoded to 'signature')currentIdentifier
-    const orgResponse = await apiService.getOrganization("signature");
+    const orgResponse = await apiService.getOrganization("mybeller");
 
-    
     if (orgResponse.status && orgResponse.data) {
       setOrganization(orgResponse.data);
       await storageService.setOrganization(orgResponse.data);

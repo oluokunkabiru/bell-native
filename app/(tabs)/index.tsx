@@ -301,7 +301,7 @@ export default function DashboardScreen() {
       color: '#00b894',
       route: '/crypto-transfer',
       gradient: [secondaryColor, secondaryColor],
-      key: 'display-crypto-transfer-menu'
+      key: 'display-crypto-exchange-menu'
     },
     { 
       title: 'Wallet Transfer', 
