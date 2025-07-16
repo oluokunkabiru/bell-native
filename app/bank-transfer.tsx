@@ -210,6 +210,8 @@ export default function BankTransfer() {
         transaction_pin: parseInt(transferData.transactionPin),
       });
 
+   
+
       if (response.status && response.data) {
         // Update wallet balance in storage
         if (response.data?.data?.user_balance_after) {
@@ -217,7 +219,15 @@ export default function BankTransfer() {
         }
         
         setResultData(response.data);
-        setCurrentStep('result');
+        console.log('Transfer successful:', response.data);
+        console.log('Transfer response:', resultData);
+
+        // Optional delay to ensure resultData is updated before UI renders
+        setTimeout(() => {
+          setCurrentStep('result');
+        }, 50);
+
+        // setCurrentStep('result');
       } else {
         Alert.alert('Error', response.message || 'Transfer failed. Please try again.');
       }
@@ -227,6 +237,12 @@ export default function BankTransfer() {
       setIsProcessing(false);
     }
   };
+
+     useEffect(() => {
+        if (resultData) {
+          console.log('✅ Result data updated:', resultData);
+        }
+      }, [resultData]);
 
   const handleBackPress = () => {
     switch (currentStep) {
@@ -495,6 +511,86 @@ export default function BankTransfer() {
     </View>
   );
 
+
+
+
+  const renderResulta = () => (
+  <View style={styles.stepContainer}>
+    {/* Debug: Show raw JSON resultData */}
+    {/* <Text style={{ color: 'gray', fontSize: 10 }}>
+      {JSON.stringify(resultData, null, 2)}
+    </Text> */}
+
+    {resultData?.status ? (
+      <>
+        <View style={[styles.successIcon, { backgroundColor: '#10B981' }]}>
+          <Check size={48} color="#FFFFFF" />
+        </View>
+        <Text style={styles.successTitle}>Transfer Successful!</Text>
+        <Text style={styles.successMessage}>{resultData.message}</Text>
+
+        <View style={styles.receiptCard}>
+          <Text style={styles.receiptTitle}>Transaction Receipt</Text>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>Reference:</Text>
+            <Text style={styles.receiptValue}>
+              {resultData?.reference_number || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>Instrument Code:</Text>
+            <Text style={styles.receiptValue}>
+              {resultData?.instrument_code || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>Description:</Text>
+            <Text style={styles.receiptValue}>
+              {resultData?.description || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>Amount:</Text>
+            <Text style={styles.receiptValue}>
+              ₦{Number(resultData?.user_amount || 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>Fee:</Text>
+            <Text style={styles.receiptValue}>
+              ₦{Number(resultData?.user_charge_amount || 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>New Balance:</Text>
+            <Text style={styles.receiptValue}>
+              ₦{Number(resultData?.user_balance_after || 0).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+      </>
+    ) : (
+      <>
+        <View style={styles.errorIcon}>
+          <Text style={styles.errorEmoji}>❌</Text>
+        </View>
+        <Text style={styles.errorTitle}>Transfer Failed</Text>
+        <Text style={styles.errorMessage}>
+          {resultData?.message || 'The transfer could not be completed. Please try again.'}
+        </Text>
+      </>
+    )}
+
+    <TouchableOpacity
+      style={[styles.doneButton, { backgroundColor: primaryColor }]}
+      onPress={() => router.back()}
+    >
+      <Text style={styles.doneButtonText}>Done</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+
   const renderResult = () => (
     <View style={styles.stepContainer}>
       {resultData?.status ? (
@@ -509,27 +605,27 @@ export default function BankTransfer() {
             <Text style={styles.receiptTitle}>Transaction Receipt</Text>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Reference:</Text>
-              <Text style={styles.receiptValue}>{resultData.data?.reference_number}</Text>
+              <Text style={styles.receiptValue}>{resultData.reference_number}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Instrument Code:</Text>
-              <Text style={styles.receiptValue}>{resultData.data?.instrument_code}</Text>
+              <Text style={styles.receiptValue}>{resultData?.instrument_code}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Description:</Text>
-              <Text style={styles.receiptValue}>{resultData.data?.description}</Text>
+              <Text style={styles.receiptValue}>{resultData?.description}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Amount:</Text>
-              <Text style={styles.receiptValue}>₦{resultData.data?.user_amount?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData?.user_amount?.toLocaleString()}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Fee:</Text>
-              <Text style={styles.receiptValue}>₦{resultData.data?.user_charge_amount?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData?.user_charge_amount?.toLocaleString()}</Text>
             </View>
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>New Balance:</Text>
-              <Text style={styles.receiptValue}>₦{resultData.data?.user_balance_after?.toLocaleString()}</Text>
+              <Text style={styles.receiptValue}>₦{resultData?.user_balance_after?.toLocaleString()}</Text>
             </View>
           </View>
         </>
@@ -644,6 +740,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingVertical: 24,
+    // Add left margin for mobile web if sidebar is present
+    ...Platform.select({
+      web: {
+        marginLeft: 50, // match sidebar width
+      },
+    }),
   },
   stepTitle: {
     fontSize: 24,
@@ -862,9 +964,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 350,
+    alignSelf: 'center',
     borderWidth: 1,
     borderColor: '#333333',
+    marginTop: 8,
+    gap: 0, // remove gap for tighter layout
   },
   pinInput: {
     flex: 1,
@@ -873,9 +978,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    marginRight: 8, // add margin to separate from icon
   },
   pinToggle: {
-    padding: 4,
+    padding: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginLeft: 0, // remove extra margin
   },
   transferButton: {
     paddingVertical: 16,
