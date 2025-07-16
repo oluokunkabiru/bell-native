@@ -52,7 +52,7 @@ export default function LoginScreen() {
 
 useEffect(() => {
   if (isAppReady && isAuthenticated && loginAttempted) {
-    router.replace('/(tabs)');
+    // router.replace('/(tabs)');
   }
 }, [isAppReady, isAuthenticated, loginAttempted]);
 
