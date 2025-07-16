@@ -210,9 +210,12 @@ export default function LoginScreen() {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                </TouchableOpacity>
+                {/* Forgot Password */}
+                {((appSettings as any)?.['customized-app-displayable-menu-items']?.['display-password-reset-menu'] !== false) && (
+                  <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/forgot-password')}>
+                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   style={[styles.loginButton, isLoggingIn && styles.loginButtonDisabled]}
@@ -225,20 +228,24 @@ export default function LoginScreen() {
             </View>
 
             {/* Footer */}
-            {/* <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/register')}>
-                <Text style={[styles.signUpText, { color: '#ffffff' }]}>Sign Up</Text>
-              </TouchableOpacity>
-            </View> */}
+            {((appSettings as any)?.['customized-app-displayable-menu-items']?.['display-registeration-menu'] !== false) && (
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => router.push('/register')}>
+                  <Text style={[styles.signUpText, { color: '#ffffff' }]}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Org info */}
-            {organization && (
-              <View style={styles.orgContainer}>
-                <Text style={styles.orgTitle}>{organization.full_name}</Text>
-                {/* <Text style={styles.orgContact}>📞 {organization.official_contact_phone}</Text> */}
-                {/* <Text style={styles.orgEmail}>✉️ {organization.official_email}</Text> */}
-              </View>
+            {organization &&
+              ((appSettings as any)?.['customized-app-displayable-menu-items']?.['display-custom-feature-menu'] !== false &&
+               (appSettings as any)?.['customized-app-displayable-menu-items']?.['display-registeration-menu'] !== false) && (
+                <View style={styles.orgContainer}>
+                  <Text style={styles.orgTitle}>{organization.full_name}</Text>
+                  <Text style={styles.orgContact}>📞 {organization.official_contact_phone}</Text>
+                  <Text style={styles.orgEmail}>✉️ {organization.official_email}</Text>
+                </View>
             )}
           </ScrollView>
         </KeyboardAvoidingView>
