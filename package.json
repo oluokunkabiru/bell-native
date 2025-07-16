@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 npx expo start",
-    "build:web": "npx expo export --platform web",
+    "build:web": "npx expo export --platform web && cp .htaccess build/.htaccess",
     "lint": "npx expo lint"
   },
   "dependencies": {
