@@ -220,9 +220,13 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
   ];
 
   // Filter menu items based on API settings
-  const filteredMenuItems = menuItems.filter(item => 
-    displayMenuItems[item.key] === undefined || displayMenuItems[item.key] === true
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    // For transaction histories, check display-transaction-histories
+    if (item.key === 'display-transactions-menu') {
+      return displayMenuItems[item.key] !== false && displayMenuItems['display-transaction-histories'] !== false;
+    }
+    return displayMenuItems[item.key] === undefined || displayMenuItems[item.key] === true;
+  });
 
   const handleNavigation = (route: string) => {
     if (route === '#') return;
