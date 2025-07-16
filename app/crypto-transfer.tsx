@@ -106,6 +106,19 @@ export default function CryptoTransfer() {
   // Get colors from API settings
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#0066CC';
 
+  // Get menu display settings from API
+  const displayMenuItems = (appSettings as any)?.['customized-app-displayable-menu-items'] as Record<string, boolean | undefined> || {};
+  // Permission logic for wallet creation (extended with new flags)
+  const canCreateWallet = (
+    (displayMenuItems['display-crypto-exchange-menu'] !== false &&
+     displayMenuItems['display-wallet-transfer-menu'] !== false &&
+     displayMenuItems['can-create-crypto-wallet'] !== false &&
+     displayMenuItems['display-send-crypto-menu'] !== false &&
+     displayMenuItems['display-receive-crypto-menu'] !== false &&
+     displayMenuItems['display-fiat-crypto-conversion-options'] !== false)
+    && (user?.permissions?.includes?.('can_create_wallet') || user?.permissions?.includes?.('wallet:create'))
+  );
+
   // Fetch crypto wallets on mount or when step is 'wallet'
   useEffect(() => {
     if (currentStep === 'wallet') {
@@ -420,98 +433,102 @@ export default function CryptoTransfer() {
         <Text style={styles.continueButtonText}>Continue</Text>
       </TouchableOpacity>
       {/* Create Wallet Button */}
-      <TouchableOpacity
-        style={[styles.continueButton, { backgroundColor: '#222', marginTop: 16 }]}
-        onPress={() => setShowCreateWallet(true)}
-      >
-        <Text style={styles.continueButtonText}>+ Create New Wallet</Text>
-      </TouchableOpacity>
+      {canCreateWallet && (
+        <TouchableOpacity
+          style={[styles.continueButton, { backgroundColor: '#222', marginTop: 16 }]} 
+          onPress={() => setShowCreateWallet(true)}
+        >
+          <Text style={styles.continueButtonText}>+ Create New Wallet</Text>
+        </TouchableOpacity>
+      )}
       {/* Create Wallet Modal */}
-      <Modal isVisible={showCreateWallet} onBackdropPress={() => setShowCreateWallet(false)}>
-        <View style={[styles.stepContainer, { backgroundColor: '#18181b', borderRadius: 16 }]}> 
-          <Text style={styles.stepTitle}>Create Wallet</Text>
-          <DropdownSelect
-            options={WALLET_TYPE_OPTIONS}
-            selectedValue={createWalletType}
-            onSelect={setCreateWalletType}
-            placeholder="Select wallet type"
-            searchable={false}
-            label="Wallet Type"
-          />
-          {currenciesLoading ? (
-            <LoadingSpinner message="Loading currencies..." color="#FFFFFF" />
-          ) : (
+      {canCreateWallet && (
+        <Modal isVisible={showCreateWallet} onBackdropPress={() => setShowCreateWallet(false)}>
+          <View style={[styles.stepContainer, { backgroundColor: '#18181b', borderRadius: 16 }]}> 
+            <Text style={styles.stepTitle}>Create Wallet</Text>
             <DropdownSelect
-              options={currencies.map(c => ({ id: c.id, name: `${c.name} (${c.code})`, code: c.id }))}
-              selectedValue={selectedCurrency}
-              onSelect={setSelectedCurrency}
-              placeholder="Select currency"
-              searchable={true}
-              label="Currency"
+              options={WALLET_TYPE_OPTIONS}
+              selectedValue={createWalletType}
+              onSelect={setCreateWalletType}
+              placeholder="Select wallet type"
+              searchable={false}
+              label="Wallet Type"
             />
-          )}
-          {(() => {
-            const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
-            let networkOptions: { id: string; name: string; code: string }[] = [];
-            if (currencyObj?.code === 'USDT') {
-              networkOptions = [
-                { id: 'TRC20', name: 'TRON (TRC20)', code: 'TRC20' },
-                { id: 'ERC20', name: 'Ethereum (ERC20)', code: 'ERC20' },
-              ];
-            } else if (currencyObj?.code === 'USDC') {
-              networkOptions = [
-                { id: 'POL', name: 'Polygon (POL)', code: 'POL' },
-              ];
-            } else if (currencyObj) {
-              networkOptions = [
-                { id: 'POL', name: 'Polygon', code: 'POL' },
-                { id: 'ETH', name: 'Ethereum', code: 'ETH' },
-                { id: 'BSC', name: 'Binance Smart Chain', code: 'BSC' },
-              ];
-            }
-            if (networkOptions.length > 0) {
-              return (
-                <DropdownSelect
-                  options={networkOptions}
-                  selectedValue={createWalletNetwork}
-                  onSelect={setCreateWalletNetwork}
-                  placeholder="Select network"
-                  searchable={false}
-                  label="Network"
-                />
-              );
-            }
-            return null;
-          })()}
-          {createWalletType === 'virtual-account' && (
-            <DropdownSelect
-              options={banks.map(b => ({ id: b.id, name: b.name, code: b.id }))}
-              selectedValue={selectedBank}
-              onSelect={setSelectedBank}
-              placeholder="Select bank"
-              searchable={true}
-              label="Bank"
-            />
-          )}
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              { backgroundColor: primaryColor, marginTop: 16 },
-              (creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)) && styles.disabledButton
-            ]}
-            onPress={handleCreateWallet}
-            disabled={creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)}
-          >
-            <Text style={styles.continueButtonText}>{creatingWallet ? 'Creating...' : 'Create Wallet'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.continueButton, { backgroundColor: '#222', marginTop: 8 }]}
-            onPress={() => setShowCreateWallet(false)}
-          >
-            <Text style={styles.continueButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+            {currenciesLoading ? (
+              <LoadingSpinner message="Loading currencies..." color="#FFFFFF" />
+            ) : (
+              <DropdownSelect
+                options={currencies.map(c => ({ id: c.id, name: `${c.name} (${c.code})`, code: c.id }))}
+                selectedValue={selectedCurrency}
+                onSelect={setSelectedCurrency}
+                placeholder="Select currency"
+                searchable={true}
+                label="Currency"
+              />
+            )}
+            {(() => {
+              const currencyObj = currencies.find(c => c.id === selectedCurrency || c.code === selectedCurrency);
+              let networkOptions: { id: string; name: string; code: string }[] = [];
+              if (currencyObj?.code === 'USDT') {
+                networkOptions = [
+                  { id: 'TRC20', name: 'TRON (TRC20)', code: 'TRC20' },
+                  { id: 'ERC20', name: 'Ethereum (ERC20)', code: 'ERC20' },
+                ];
+              } else if (currencyObj?.code === 'USDC') {
+                networkOptions = [
+                  { id: 'POL', name: 'Polygon (POL)', code: 'POL' },
+                ];
+              } else if (currencyObj) {
+                networkOptions = [
+                  { id: 'POL', name: 'Polygon', code: 'POL' },
+                  { id: 'ETH', name: 'Ethereum', code: 'ETH' },
+                  { id: 'BSC', name: 'Binance Smart Chain', code: 'BSC' },
+                ];
+              }
+              if (networkOptions.length > 0) {
+                return (
+                  <DropdownSelect
+                    options={networkOptions}
+                    selectedValue={createWalletNetwork}
+                    onSelect={setCreateWalletNetwork}
+                    placeholder="Select network"
+                    searchable={false}
+                    label="Network"
+                  />
+                );
+              }
+              return null;
+            })()}
+            {createWalletType === 'virtual-account' && (
+              <DropdownSelect
+                options={banks.map(b => ({ id: b.id, name: b.name, code: b.id }))}
+                selectedValue={selectedBank}
+                onSelect={setSelectedBank}
+                placeholder="Select bank"
+                searchable={true}
+                label="Bank"
+              />
+            )}
+            <TouchableOpacity
+              style={[
+                styles.continueButton,
+                { backgroundColor: primaryColor, marginTop: 16 },
+                (creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)) && styles.disabledButton
+              ]}
+              onPress={handleCreateWallet}
+              disabled={creatingWallet || !selectedCurrency || !createWalletType || (currencies.find(c => (c.id === selectedCurrency || c.code === selectedCurrency) && (c.code === 'USDT' || c.code === 'USDC')) && !createWalletNetwork) || (createWalletType === 'virtual-account' && !selectedBank)}
+            >
+              <Text style={styles.continueButtonText}>{creatingWallet ? 'Creating...' : 'Create Wallet'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.continueButton, { backgroundColor: '#222', marginTop: 8 }]}
+              onPress={() => setShowCreateWallet(false)}
+            >
+              <Text style={styles.continueButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 
@@ -1202,4 +1219,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-}); 
+});
