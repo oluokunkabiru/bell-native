@@ -210,13 +210,13 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       active: pathname === '/kyc-verification',
       key: 'display-kyc-menu',
     },
-    {
-      title: 'Settings',
-      icon: Settings,
-      route: '/(tabs)/settings' as const,
-      active: pathname === '/(tabs)/settings',
-      key: 'display-settings-menu',
-    },
+    // {
+    //   title: 'Settings',
+    //   icon: Settings,
+    //   route: '/(tabs)/settings' as const,
+    //   active: pathname === '/(tabs)/settings',
+    //   key: 'display-settings-menu',
+    // },
   ];
 
   // Filter menu items based on API settings
@@ -276,7 +276,8 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
         
         <ScrollView 
           style={styles.menuItemsContainer}
-          contentContainerStyle={styles.menuItemsContent}
+          con
+          e={styles.menuItemsContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.menuItems}>

@@ -271,16 +271,16 @@ export function SideMenu({ visible, onClose, user, kycStatus }: SideMenuProps) {
       },
       key: 'display-help-menu',
     },
-    {
-      title: 'Settings',
-      icon: Settings,
-      color: '#3a0ca3',
-      onPress: () => {
-        onClose();
-        router.push('/(tabs)/settings');
-      },
-      key: 'display-settings-menu',
-    },
+    // {
+    //   title: 'Settings',
+    //   icon: Settings,
+    //   color: '#3a0ca3',
+    //   onPress: () => {
+    //     onClose();
+    //     router.push('/(tabs)/settings');
+    //   },
+    //   key: 'display-settings-menu',
+    // },
   ];
 
   // Filter menu items based on API settings (same logic as WebSidebar)
