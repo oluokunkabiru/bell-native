@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "7GNETWORK",
-    "slug": "7GNETWORK",
+    "name": "Payslik",
+    "slug": "Payslik",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
+
     },
     "web": {
       "bundler": "metro",
@@ -21,8 +22,8 @@
       "typedRoutes": true
     },
     "manifest": {
-      "name": "MyBeller",
-      "short_name": "MyBeller",
+      "name": "Payslik",
+      "short_name": "Payslik",
       "start_url": "/?utm_source=pwa",
       "display": "standalone",
       "background_color": "#000000",
