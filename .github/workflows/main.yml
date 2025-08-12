@@ -23,6 +23,7 @@ jobs:
       
       SSH_HOST:      ${{ secrets.SSH_HOST }}
       SSH_DIR:       ${{ secrets.SSH_DIR }}
+      PAYSLIK_DIR:   ${{ secrets.PAYSLIK_DIR }}
       SSH_BRANCH:    ${{ secrets.SSH_BRANCH  }}
       SSH_PORT:      ${{ vars.V_PORT }}   
     
@@ -54,11 +55,18 @@ jobs:
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts || true
 
       # 3. Rsync build folder to server
-      - name: Upload build to server
+      - name: Upload build to demo
         run: |
           RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
           [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
-          rsync -avz --delete -e "$RSYNC_SSH" ./dist/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
+          rsync -avz -e "$RSYNC_SSH" ./dist/* "$SSH_USER@$SSH_HOST:$SSH_DIR/"
+
+      - name: Upload build to Payslik
+        run: |
+          RSYNC_SSH="ssh -o StrictHostKeyChecking=no"
+          [ -n "$SSH_PORT" ] && RSYNC_SSH="$RSYNC_SSH -p $SSH_PORT"
+          rsync -avz -e "$RSYNC_SSH" ./dist/* "$SSH_USER@$SSH_HOST:$PAYSLIK_DIR/"
+
 
       # # 4. Restart (or start) PM2 on server
       # - name: Restart PM2
