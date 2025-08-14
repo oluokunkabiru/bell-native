@@ -68,6 +68,8 @@ export default function WalletTransfer() {
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(false);
   const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [banks, setBanks] = useState<any[]>([]);
+  const [selectedBank, setSelectedBank] = useState('');
 
   // Get colors from API settings
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#0066CC';
@@ -81,6 +83,21 @@ export default function WalletTransfer() {
       setCurrentStep('create-wallet');
     }
   }, [wallet]);
+
+  useEffect(() => {
+    // Fetch banks when creating wallet
+    if (currentStep === 'create-wallet') {
+      apiService.makeRequest('/banks?items_per_page=50')
+        .then((response) => {
+          if (response.status && response.data?.data) {
+            setBanks(response.data.data);
+          } else {
+            setBanks([]);
+          }
+        })
+        .catch(() => setBanks([]));
+    }
+  }, [currentStep]);
 
   const loadWalletTypes = async () => {
     setIsLoadingWalletTypes(true);
@@ -125,21 +142,26 @@ export default function WalletTransfer() {
       Alert.alert('Error', 'Please select wallet type and currency');
       return;
     }
-
+    if (selectedWalletType === 'virtual-account' && !selectedBank) {
+      Alert.alert('Error', 'Please select a bank');
+      return;
+    }
     setIsCreatingWallet(true);
     try {
+      const payload: any = {
+        account_type: 'virtual-account',
+        wallet_type_id: selectedWalletType,
+        currency_id: selectedCurrency
+      };
+      if (selectedWalletType === 'virtual-account' && selectedBank) {
+        payload.bank_id = selectedBank;
+      }
       const response = await apiService.makeRequest('/customers/wallets', {
         method: 'POST',
-        body: JSON.stringify({
-          account_type: 'virtual-account',
-          wallet_type_id: selectedWalletType,
-          currency_id: selectedCurrency
-        })
+        body: JSON.stringify(payload)
       });
-
       if (response.status) {
         Alert.alert('Success', 'Wallet created successfully!');
-        // Refresh user profile to get the new wallet
         await apiService.getProfile();
         router.replace('/');
       } else {
@@ -333,14 +355,39 @@ export default function WalletTransfer() {
             </View>
           </View>
 
+          {selectedWalletType === 'virtual-account' && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Bank</Text>
+              <View style={styles.selectContainer}>
+                {banks.map((bank) => (
+                  <TouchableOpacity
+                    key={bank.id}
+                    style={[
+                      styles.selectOption,
+                      selectedBank === bank.name && { backgroundColor: primaryColor }
+                    ]}
+                    onPress={() => setSelectedBank(bank.name)}
+                  >
+                    <Text style={[
+                      styles.selectOptionText,
+                      selectedBank === bank.name && styles.selectedOptionText
+                    ]}>
+                      {bank.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity
             style={[
               styles.createWalletButton,
               { backgroundColor: primaryColor },
-              (!selectedWalletType || !selectedCurrency || isCreatingWallet) && styles.disabledButton
+              (!selectedWalletType || !selectedCurrency || (selectedWalletType === 'virtual-account' && !selectedBank) || isCreatingWallet) && styles.disabledButton
             ]}
             onPress={createWallet}
-            disabled={!selectedWalletType || !selectedCurrency || isCreatingWallet}
+            disabled={!selectedWalletType || !selectedCurrency || (selectedWalletType === 'virtual-account' && !selectedBank) || isCreatingWallet}
           >
             <Text style={styles.createWalletButtonText}>
               {isCreatingWallet ? 'Creating Wallet...' : 'Create Wallet'}

@@ -187,7 +187,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     
 
-    // Fetch organization using identifier (currently hardcoded to 'signature')currentIdentifier
+    // Fetch organization using identifier (currently hardcoded to 'signature')payslik currentIdentifier
     
     const orgResponse = await apiService.getOrganization("payslik");
 
