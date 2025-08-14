@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   mobileCollapsedContainer: {
-    width: 60,
+    width: 0,
   },
   safeArea: {
     flex: 1,
