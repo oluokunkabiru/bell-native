@@ -116,7 +116,12 @@ export default function CryptoTransfer() {
      displayMenuItems['display-send-crypto-menu'] !== false &&
      displayMenuItems['display-receive-crypto-menu'] !== false &&
      displayMenuItems['display-fiat-crypto-conversion-options'] !== false)
-    && (user?.permissions?.includes?.('can_create_wallet') || user?.permissions?.includes?.('wallet:create'))
+     
+    //  && 
+    //  (
+    //   user?.permissions?.includes?.('can_create_wallet') 
+    //  || user?.permissions?.includes?.('wallet:create')
+    // )
   );
 
   // Fetch crypto wallets on mount or when step is 'wallet'
