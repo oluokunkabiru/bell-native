@@ -244,6 +244,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
         <View style={styles.header}>
           {/* Only show menu title when not collapsed */}
           {!collapsed && <Text style={styles.menuTitle}>MENU</Text>}
+          
           <TouchableOpacity 
             style={styles.collapseButton}
             onPress={toggleCollapse}
