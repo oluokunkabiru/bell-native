@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -83,6 +84,7 @@ export default function DashboardScreen() {
     weeklyAmount: 0
   });
   const [wallets, setWallets] = useState<any[]>([]);
+  const [isLoadingWallets, setIsLoadingWallets] = useState(false);
 
   // Get colors from API settings with fallbacks
   const primaryColor = appSettings?.['customized-app-primary-color'] || '#4361ee';
@@ -92,6 +94,7 @@ export default function DashboardScreen() {
   const displayMenuItems = ((appSettings as any)?.['customized-app-displayable-menu-items'] as Record<string, boolean | undefined>) || {};
 
   const fetchWallets = async () => {
+    setIsLoadingWallets(true);
     try {
       const response = await apiService.getWallets(1, 15);
       if (response.status && response.data?.data) {
@@ -101,6 +104,8 @@ export default function DashboardScreen() {
       }
     } catch (error) {
       setWallets([]);
+    } finally {
+      setIsLoadingWallets(false);
     }
   };
 
@@ -488,37 +493,44 @@ export default function DashboardScreen() {
       >
         {/* Wallets Slider/Blocks */}
         <View style={styles.walletsContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.walletsSlider}
-            style={styles.walletsScrollView}
-          >
-            {wallets.map((w, idx) => (
-              <View key={w?.id || idx} style={styles.walletBlock}>
-                <Text style={styles.walletCurrencyIcon}>
-                  {getCurrencyIcon(w?.currency?.code || '')}
-                </Text>
-                <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
-                <Text style={styles.walletBalance}>
-                  {(w?.currency?.symbol || '₦')}
-                  {parseFloat(w?.balance || '0').toLocaleString()}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
-                  <TouchableOpacity
-                    style={{ marginLeft: 8 }}
-                    onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
-                  >
-                    <Copy size={18} color="#94a3b8" />
-                  </TouchableOpacity>
+          {isLoadingWallets ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={primaryColor} />
+              <Text style={styles.loadingText}>Loading wallets...</Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.walletsSlider}
+              style={styles.walletsScrollView}
+            >
+              {wallets.map((w, idx) => (
+                <View key={w?.id || idx} style={styles.walletBlock}>
+                  <Text style={styles.walletCurrencyIcon}>
+                    {getCurrencyIcon(w?.currency?.code || '')}
+                  </Text>
+                  <Text style={styles.walletType}>{w?.wallet_type?.name || 'Wallet'}</Text>
+                  <Text style={styles.walletBalance}>
+                    {(w?.currency?.symbol || '₦')}
+                    {parseFloat(w?.balance || '0').toLocaleString()}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Text style={styles.walletCurrencyCode}>{w?.currency?.code}</Text>
+                    <TouchableOpacity
+                      style={{ marginLeft: 8 }}
+                      onPress={() => copyToClipboard(w.wallet_number, 'Wallet number')}
+                    >
+                      <Copy size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                    {w.wallet_number?.slice(-10)}
+                  </Text>
                 </View>
-                <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
-                  {w.wallet_number?.slice(-10)}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
 
