@@ -1,7 +1,7 @@
 import { LoginRequest, LoginResponse, ProfileResponse, OrganizationResponse, AppSettingsResponse } from '@/types/api';
 import { storageService } from './storage';
 
-const API_BASE_URL = 'https://app.gobeller.com/api/v1';
+const API_BASE_URL = 'https://app.gobeller.cc/api/v1';
 
 interface TransactionResponse {
   status: boolean;

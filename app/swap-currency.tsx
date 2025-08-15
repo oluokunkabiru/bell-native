@@ -146,10 +146,13 @@ export default function SwapCurrencyScreen() {
         quote_currency: swapData.quoteCurrency,
         exchange_amount: amount,
       });
+
+      console.log('Exchange rate response:', response);
       
       if (response.status && response.data?.data) {
         setExchangeRateData(response.data.data);
-        setCurrentStep('destination');
+        // Do NOT move to destination step yet
+        // Wait for user to confirm after seeing rate info
       } else {
         Alert.alert('Error', response.message || 'Failed to get exchange rate');
       }
@@ -364,6 +367,20 @@ export default function SwapCurrencyScreen() {
           </View>
         </View>
       </View>
+      
+    <Text style={styles.rateLabel}>Exchange Rate:</Text>
+
+
+      {exchangeRateData && (
+        <View style={styles.rateInfo}>
+          <Text style={styles.rateLabel}>Exchange Rate:</Text>
+          <Text style={styles.rateValue}>{exchangeRateData.exchange_rate}</Text>
+          <Text style={styles.receiveLabel}>You will receive:</Text>
+          <Text style={styles.receiveAmount}>
+            {exchangeRateData.quote_amount} {swapData.quoteCurrency}
+          </Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={[
@@ -378,6 +395,15 @@ export default function SwapCurrencyScreen() {
           {isLoading ? 'Getting Rate...' : 'Get Exchange Rate'}
         </Text>
       </TouchableOpacity>
+
+      {exchangeRateData && (
+        <TouchableOpacity
+          style={[styles.continueButton, { backgroundColor: primaryColor }]}
+          onPress={() => setCurrentStep('destination')}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
