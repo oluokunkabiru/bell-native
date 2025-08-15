@@ -271,6 +271,16 @@ export function SideMenu({ visible, onClose, user, kycStatus }: SideMenuProps) {
       },
       key: 'display-help-menu',
     },
+    {
+      title: 'Swap Currency',
+      icon: Bitcoin,
+      color: '#4cc9f0',
+      onPress: () => {
+        onClose();
+        router.push('/swap-currency');
+      },
+      key: 'display-swap-currency-menu',
+    },
     // {
     //   title: 'Settings',
     //   icon: Settings,

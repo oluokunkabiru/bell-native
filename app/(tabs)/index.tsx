@@ -372,6 +372,14 @@ export default function DashboardScreen() {
       gradient: [secondaryColor, secondaryColor],
       key: 'display-virtual-card-menu'
     },
+    { 
+      title: 'Swap Currency', 
+      icon: Bitcoin, 
+      color: '#4cc9f0',
+      route: '/swap-currency',
+      gradient: [secondaryColor, secondaryColor],
+      key: 'display-swap-currency-menu'
+    },
   ];
 
   // Filter quick actions based on API settings

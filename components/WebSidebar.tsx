@@ -189,6 +189,13 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
       active: pathname === '/(tabs)/transactions',
       key: 'display-transactions-menu',
     },
+    {
+      title: 'Swap Currency',
+      icon: Bitcoin,
+      route: '/swap-currency' as const,
+      active: pathname === '/swap-currency',
+      key: 'display-swap-currency-menu',
+    },
     // {
     //   title: 'Analytics',
     //   icon: Analytics,
