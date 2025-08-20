@@ -42,6 +42,7 @@ import {
   Menu,
   Bitcoin,
   WalletCards,
+  ArrowRightLeft
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -374,7 +375,7 @@ export default function DashboardScreen() {
     },
     { 
       title: 'Swap Currency', 
-      icon: Bitcoin, 
+      icon: ArrowRightLeft, 
       color: '#4cc9f0',
       route: '/swap-currency',
       gradient: [secondaryColor, secondaryColor],

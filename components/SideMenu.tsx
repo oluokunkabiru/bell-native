@@ -30,6 +30,7 @@ import {
   Tv,
   PiggyBank,
   TrendingUp,
+  ArrowRightLeft,
   ChartBar as Analytics,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -273,7 +274,7 @@ export function SideMenu({ visible, onClose, user, kycStatus }: SideMenuProps) {
     },
     {
       title: 'Swap Currency',
-      icon: Bitcoin,
+      icon: ArrowRightLeft,
       color: '#4cc9f0',
       onPress: () => {
         onClose();

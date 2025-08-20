@@ -18,7 +18,8 @@ import {
   PiggyBank,
   ChevronLeft,
   Send,
-  Bitcoin
+  Bitcoin,
+  ArrowRightLeft
 } from 'lucide-react-native';
 import { router, usePathname } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -191,7 +192,7 @@ export function WebSidebar({ onLogout, onToggleCollapse }: WebSidebarProps) {
     },
     {
       title: 'Swap Currency',
-      icon: Bitcoin,
+      icon: ArrowRightLeft,
       route: '/swap-currency' as const,
       active: pathname === '/swap-currency',
       key: 'display-swap-currency-menu',
